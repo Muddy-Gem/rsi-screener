@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 import yfinance as yf
 import pandas as pd
@@ -11,7 +11,7 @@ import os
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-# 캐시 (전역 상태)
+# 캐시 (전역 상태 - 모든 사용자 공유)
 cache = {
     'data': [],
     'all_data': [],
@@ -19,8 +19,12 @@ cache = {
     'status': 'idle',  # idle, scanning, done, error
     'progress': 0,
     'total': 0,
-    'error': None
+    'error': None,
+    'scan_started_by': None
 }
+
+# 스캔 중복 방지 락
+scan_lock = threading.Lock()
 
 def get_sample_stocks():
     stocks = [
@@ -69,7 +73,6 @@ def get_sample_stocks():
 
 def calculate_rsi(code, period=14):
     try:
-        # KS 시도
         stock = yf.Ticker(f"{code}.KS")
         hist = stock.history(period="3mo")
 
@@ -87,10 +90,10 @@ def calculate_rsi(code, period=14):
         change_pct = round((current_price - prev_price) / prev_price * 100, 2)
 
         return current_rsi, current_price, change_pct
-    except Exception as e:
+    except Exception:
         return None, None, None
 
-def run_scan(stocks_df):
+def run_scan(stocks_df, requester_ip):
     """백그라운드 스레드에서 스캔 실행"""
     cache['status'] = 'scanning'
     cache['data'] = []
@@ -98,13 +101,11 @@ def run_scan(stocks_df):
     cache['progress'] = 0
     cache['total'] = len(stocks_df)
     cache['error'] = None
+    cache['scan_started_by'] = requester_ip
 
     results = []
 
     for i, row in stocks_df.iterrows():
-        if cache['status'] == 'idle':  # 중단 요청 시
-            break
-
         cache['progress'] = i + 1
         code = str(row['code']).zfill(6)
         name = row['name']
@@ -132,6 +133,13 @@ def run_scan(stocks_df):
     cache['status'] = 'done'
     cache['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cache['progress'] = cache['total']
+    cache['scan_started_by'] = None
+
+    # 락 해제
+    try:
+        scan_lock.release()
+    except RuntimeError:
+        pass
 
 @app.route('/')
 def index():
@@ -159,28 +167,50 @@ def get_results():
 
 @app.route('/api/quick-scan', methods=['GET', 'POST'])
 def quick_scan():
-    if cache['status'] == 'scanning':
-        return jsonify({'message': '이미 스캔 중입니다.', 'status': 'scanning'})
+    requester_ip = request.remote_addr
+
+    # 이미 스캔 중이면 현재 상태 반환
+    if not scan_lock.acquire(blocking=False):
+        return jsonify({
+            'message': '다른 사용자가 스캔 중입니다. 잠시 후 결과가 자동으로 표시됩니다.',
+            'status': 'scanning',
+            'total': cache['total'],
+            'progress': cache['progress']
+        }), 200
 
     stocks_df = get_sample_stocks()
-    # 백그라운드 스레드로 실행
-    t = threading.Thread(target=run_scan, args=(stocks_df,))
+    t = threading.Thread(target=run_scan, args=(stocks_df, requester_ip))
     t.daemon = True
     t.start()
 
-    return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(stocks_df)})
+    return jsonify({
+        'message': '스캔 시작됨',
+        'status': 'scanning',
+        'total': len(stocks_df)
+    })
 
 @app.route('/api/scan', methods=['GET', 'POST'])
 def full_scan():
-    if cache['status'] == 'scanning':
-        return jsonify({'message': '이미 스캔 중입니다.', 'status': 'scanning'})
+    requester_ip = request.remote_addr
 
-    stocks_df = get_sample_stocks()  # 전체 스캔도 동일 (추후 확장 가능)
-    t = threading.Thread(target=run_scan, args=(stocks_df,))
+    if not scan_lock.acquire(blocking=False):
+        return jsonify({
+            'message': '다른 사용자가 스캔 중입니다. 잠시 후 결과가 자동으로 표시됩니다.',
+            'status': 'scanning',
+            'total': cache['total'],
+            'progress': cache['progress']
+        }), 200
+
+    stocks_df = get_sample_stocks()
+    t = threading.Thread(target=run_scan, args=(stocks_df, requester_ip))
     t.daemon = True
     t.start()
 
-    return jsonify({'message': '전체 스캔 시작됨', 'status': 'scanning', 'total': len(stocks_df)})
+    return jsonify({
+        'message': '전체 스캔 시작됨',
+        'status': 'scanning',
+        'total': len(stocks_df)
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
