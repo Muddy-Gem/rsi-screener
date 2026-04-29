@@ -192,6 +192,61 @@
     .notice{font-size:12px;}
     .timestamp{font-size:12px;}
   }
+
+  /* ── 툴팁 ── */
+  .tooltip-wrap { position:relative; display:inline-block; }
+  .tooltip-wrap .tooltip-box {
+    display:none; position:absolute; bottom:calc(100% + 6px); left:50%;
+    transform:translateX(-50%); background:#1a2744; border:1px solid var(--border);
+    border-radius:8px; padding:8px 12px; font-size:11px; color:var(--text);
+    font-family:'Noto Sans KR',sans-serif; white-space:nowrap; z-index:100;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4); line-height:1.5;
+    pointer-events:none;
+  }
+  .tooltip-wrap .tooltip-box::after {
+    content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:#1a2744;
+  }
+  .tooltip-wrap:hover .tooltip-box { display:block; }
+
+  /* ── 지표 설명 패널 ── */
+  .guide-panel {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; margin-bottom:12px; overflow:hidden;
+  }
+  .guide-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; cursor:pointer; user-select:none;
+    transition:background 0.2s;
+  }
+  .guide-header:hover { background:var(--surface2); }
+  .guide-header-left { display:flex; align-items:center; gap:8px; }
+  .guide-title { font-size:13px; font-weight:600; color:var(--text-bright); }
+  .guide-subtitle { font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
+  .guide-arrow { font-size:12px; color:var(--text-dim); transition:transform 0.2s; }
+  .guide-arrow.open { transform:rotate(180deg); }
+  .guide-body { display:none; padding:0 14px 14px; }
+  .guide-body.open { display:block; }
+  .guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .guide-item {
+    background:var(--surface2); border-radius:8px; padding:10px 12px;
+    border-left:3px solid var(--border);
+  }
+  .guide-item.g-rsi { border-color:var(--yellow); }
+  .guide-item.g-ma { border-color:var(--accent); }
+  .guide-item.g-bb { border-color:var(--purple); }
+  .guide-item.g-macd { border-color:var(--green); }
+  .guide-item.g-52 { border-color:var(--orange); }
+  .guide-item.g-score { border-color:var(--red); }
+  .guide-item-title { font-size:12px; font-weight:700; color:var(--text-bright); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .guide-item-desc { font-size:11px; color:var(--text-dim); line-height:1.6; }
+  .guide-item-tag { font-size:10px; font-family:'IBM Plex Mono',monospace; padding:1px 6px; border-radius:4px; }
+
+  @media(min-width:768px){
+    .guide-grid { grid-template-columns:repeat(3,1fr); }
+    .guide-header { padding:14px 20px; }
+    .guide-body { padding:0 20px 20px; }
+  }
 </style>
 </head>
 <body>
@@ -274,6 +329,97 @@
   <div class="notice">
     💡 RSI + 이동평균(20/60일) + 볼린저밴드 + MACD + 52주 고저 분석<br>
     매일 오전 8시 자동 갱신 · 데이터: Yahoo Finance (전일종가 기준)
+  </div>
+
+
+  <!-- 지표 설명 패널 -->
+  <div class="guide-panel">
+    <div class="guide-header" onclick="toggleGuide()">
+      <div class="guide-header-left">
+        <span style="font-size:16px;">📖</span>
+        <div>
+          <div class="guide-title">지표 설명 보기</div>
+          <div class="guide-subtitle">각 지표가 무엇을 의미하는지 확인하세요</div>
+        </div>
+      </div>
+      <span class="guide-arrow" id="guide-arrow">▼</span>
+    </div>
+    <div class="guide-body" id="guide-body">
+      <div class="guide-grid">
+        <div class="guide-item g-rsi">
+          <div class="guide-item-title">
+            <span class="ind-tag ind-yellow guide-item-tag">RSI과매도</span>
+            RSI (상대강도지수)
+          </div>
+          <div class="guide-item-desc">
+            14일간 상승/하락 강도 비교.<br>
+            <b style="color:var(--yellow)">≤ 40</b>: 과매도 → 매수 고려<br>
+            <b style="color:var(--red)">≤ 30</b>: 극과매도 → 강한 매수 신호<br>
+            전일종가 기준이라 당일 변동 미반영
+          </div>
+        </div>
+        <div class="guide-item g-ma">
+          <div class="guide-item-title">
+            <span class="ind-tag ind-blue guide-item-tag">MA20위</span>
+            이동평균선 (MA)
+          </div>
+          <div class="guide-item-desc">
+            20일/60일 종가 평균선.<br>
+            <b style="color:var(--accent)">MA20위</b>: 단기 상승 추세 유지<br>
+            <b style="color:var(--accent)">MA20근접</b>: ±3% 이내, 지지선 테스트 중<br>
+            MA20아래: 단기 하락 추세
+          </div>
+        </div>
+        <div class="guide-item g-bb">
+          <div class="guide-item-title">
+            <span class="ind-tag ind-purple guide-item-tag">볼린저하단</span>
+            볼린저밴드 (BB)
+          </div>
+          <div class="guide-item-desc">
+            20일 이동평균 ± 표준편차 2배.<br>
+            <b style="color:var(--purple)">BB하단</b>: 하단 밴드 20% 이내<br>
+            → 통계적 저점 구간. 반등 가능성 ↑<br>
+            BB%는 밴드 내 현재 위치 (0%=하단)
+          </div>
+        </div>
+        <div class="guide-item g-macd">
+          <div class="guide-item-title">
+            <span class="ind-tag ind-green guide-item-tag">MACD골든</span>
+            MACD
+          </div>
+          <div class="guide-item-desc">
+            12일 - 26일 지수이동평균 차이.<br>
+            <b style="color:var(--green)">MACD골든</b>: MACD선이 시그널선을 상향 돌파<br>
+            → 단기 상승 전환 신호<br>
+            전일종가 기준으로 안정적인 지표
+          </div>
+        </div>
+        <div class="guide-item g-52">
+          <div class="guide-item-title">
+            <span style="font-size:14px;">📊</span>
+            52주 고저 위치
+          </div>
+          <div class="guide-item-desc">
+            1년간 최고/최저가 대비 현재 위치.<br>
+            <b style="color:#4fc3f7">저+%</b>: 52주 저점 대비 상승률<br>
+            <b style="color:var(--text-dim)">고%</b>: 52주 고점 대비 하락률<br>
+            저점 근처 + RSI낮음 = 바닥권 신호
+          </div>
+        </div>
+        <div class="guide-item g-score">
+          <div class="guide-item-title">
+            <span style="font-size:14px;">⭐</span>
+            종합 점수 (0~5점)
+          </div>
+          <div class="guide-item-desc">
+            RSI≤40 +1 / RSI≤30 추가+1<br>
+            MA20위·근접 +1 / 볼린저하단 +1<br>
+            MACD골든 +1<br>
+            <b style="color:var(--green)">3점↑: 매수유망</b> / <b style="color:var(--green)">4점↑: 강력매수</b>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="table-container">
@@ -487,6 +633,22 @@
     return `<span class="signal-badge ${map[s]||'signal-watch'}">${s}</span>`;
   }
 
+  // 툴팁 설명 맵
+  const IND_TIPS = {
+    'RSI극과매도': 'RSI ≤ 30\n극과매도 구간. 강한 반등 가능성',
+    'RSI과매도': 'RSI ≤ 40\n과매도 구간. 매수 고려 시점',
+    'MA20위': '현재가 > 20일 이동평균\n단기 상승 추세 유지 중',
+    'MA20근접': '현재가가 20일선 ±3% 이내\n지지선 근처에서 눌림목',
+    'MA20아래': '현재가 < 20일 이동평균\n단기 하락 추세',
+    'MA60위': '현재가 > 60일 이동평균\n중기 상승 추세 유지',
+    '볼린저하단': '볼린저밴드 하단 20% 이내\n통계적 저점. 반등 가능성 높음',
+    'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
+    'MA20↑': '현재가 > 20일선\n단기 상승 추세',
+    'MA20~': '20일선 ±3% 이내\n지지선 테스트 중',
+    'BB하단': '볼린저밴드 하단 근처\n통계적 저점 구간',
+    'MACD✓': 'MACD 골든크로스\n상승 전환 신호',
+  };
+
   function indTags(s){
     const tags = [];
     if (s.rsi<=30) tags.push(['ind-red','RSI극과매도']);
@@ -497,7 +659,11 @@
     if (s.above_ma60) tags.push(['ind-green','MA60위']);
     if (s.near_bb_lower) tags.push(['ind-purple','볼린저하단']);
     if (s.macd_golden) tags.push(['ind-green','MACD골든']);
-    return tags.map(([cls,txt])=>`<span class="ind-tag ${cls}">${txt}</span>`).join('');
+    return tags.map(([cls,txt])=>`
+      <span class="tooltip-wrap">
+        <span class="ind-tag ${cls}">${txt}</span>
+        <span class="tooltip-box">${(IND_TIPS[txt]||txt).replace(/\n/g,'<br>')}</span>
+      </span>`).join('');
   }
 
   function indTagsDesktop(s){
@@ -506,7 +672,18 @@
     else if (s.near_ma20) tags.push(['ind-blue','MA20~']);
     if (s.near_bb_lower) tags.push(['ind-purple','BB하단']);
     if (s.macd_golden) tags.push(['ind-green','MACD✓']);
-    return tags.map(([cls,txt])=>`<span class="ind-tag ${cls}">${txt}</span>`).join('');
+    return tags.map(([cls,txt])=>`
+      <span class="tooltip-wrap">
+        <span class="ind-tag ${cls}">${txt}</span>
+        <span class="tooltip-box">${(IND_TIPS[txt]||txt).replace(/\n/g,'<br>')}</span>
+      </span>`).join('');
+  }
+
+  function toggleGuide(){
+    const body = document.getElementById('guide-body');
+    const arrow = document.getElementById('guide-arrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
   }
 
   function week52Bar(s){
