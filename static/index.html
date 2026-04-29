@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSI 스크리너 | 한국 주식</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #141e2e;
+    --surface2: #1e2d42;
+    --border: #2a3f5f;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #00e676;
+    --red: #ff1744;
+    --yellow: #ffd600;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --text-bright: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 배경 그리드 효과 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 헤더 */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), #0080ff);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: #000;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #90a8c0;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .timestamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: #90a8c0;
+    text-align: right;
+  }
+
+  /* 통계 카드 */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.yellow::before { background: var(--yellow); }
+  .stat-card.green::before { background: var(--green); }
+
+  .stat-label {
+    font-size: 12px;
+    color: #b0bec5;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-bright);
+    line-height: 1;
+  }
+
+  .stat-desc {
+    font-size: 12px;
+    color: #90a4b8;
+    margin-top: 6px;
+  }
+
+  /* 컨트롤 패널 */
+  .control-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #33ddff; transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .filter-label {
+    font-size: 13px;
+    color: #b0c4d8;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  select, input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input[type="number"]:focus {
+    border-color: var(--accent);
+  }
+
+  input[type="number"] { width: 80px; }
+
+  /* 진행 바 */
+  .progress-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: none;
+  }
+
+  .progress-container.active { display: block; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .progress-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  .progress-bar-bg {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #0080ff);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    width: 0%;
+    position: relative;
+  }
+
+  .progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 40px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+    animation: shimmer 1s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
+  }
+
+  /* 테이블 */
+  .table-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge {
+    background: rgba(0,212,255,0.15);
+    color: var(--accent);
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  .badge.green { background: rgba(0,230,118,0.15); color: var(--green); }
+  .badge.red { background: rgba(255,23,68,0.15); color: var(--red); }
+
+  .search-input {
+    width: 200px;
+    padding: 7px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    outline: none;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: #90a4ae;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  th:hover { color: var(--accent); }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(0,212,255,0.03); }
+
+  .stock-name {
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+
+  .stock-code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #7896b0;
+    margin-top: 2px;
+  }
+
+  .market-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  .market-kospi { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .market-kosdaq { background: rgba(255,107,53,0.1); color: var(--accent2); }
+
+  .price-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+
+  .change-positive { color: var(--red); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  .change-negative { color: #4fc3f7; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+
+  /* RSI 바 */
+  .rsi-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rsi-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 44px;
+  }
+
+  .rsi-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+
+  .rsi-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  .rsi-below20 { background: #ff1744; }
+  .rsi-below30 { background: #ff6d00; }
+  .rsi-below40 { background: #ffd600; }
+
+  .signal-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .signal-strong { background: rgba(255,23,68,0.15); color: #ff5252; border: 1px solid rgba(255,23,68,0.3); }
+  .signal-consider { background: rgba(255,214,0,0.15); color: #ffd600; border: 1px solid rgba(255,214,0,0.3); }
+  .signal-watch { background: rgba(100,116,139,0.15); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* 빈 상태 */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .empty-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  /* 스피너 */
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 탭 */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+  }
+
+  .tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    color: #90a8c0;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    border-color: rgba(0,212,255,0.2);
+  }
+
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .notice {
+    background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #a0b8cc;
+    margin-bottom: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    color: #8aа0b8;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .control-panel { flex-direction: column; align-items: stretch; }
+    .filter-group { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 헤더 -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">RSI</div>
+      <div>
+        <h1>RSI 스크리너</h1>
+        <div class="subtitle">KOSPI / KOSDAQ · 과매도 종목 탐색기</div>
+      </div>
+    </div>
+    <div class="timestamp" id="timestamp">마지막 업데이트: -</div>
+  </header>
+
+  <!-- 통계 카드 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">스캔 종목</div>
+      <div class="stat-value" id="stat-total">-</div>
+      <div class="stat-desc">전체 분석 대상</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">RSI ≤ 30</div>
+      <div class="stat-value" id="stat-strong">-</div>
+      <div class="stat-desc">강한 매수 신호</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">RSI 30~40</div>
+      <div class="stat-value" id="stat-consider">-</div>
+      <div class="stat-desc">매수 고려 구간</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">필터 결과</div>
+      <div class="stat-value" id="stat-filtered">-</div>
+      <div class="stat-desc">현재 표시 종목</div>
+    </div>
+  </div>
+
+  <!-- 컨트롤 패널 -->
+  <div class="control-panel">
+    <button class="btn btn-primary" id="btn-quick" onclick="quickScan()">
+      <span class="btn-text">⚡ 빠른 스캔</span>
+      <span style="font-size:10px;opacity:0.7">주요 종목</span>
+    </button>
+    <button class="btn btn-secondary" id="btn-full" onclick="fullScan()">
+      🔍 전체 스캔
+      <span style="font-size:10px;opacity:0.7">시간 소요</span>
+    </button>
+
+    <div class="filter-group">
+      <span class="filter-label">RSI 기준</span>
+      <input type="number" id="rsi-threshold" value="40" min="1" max="100" onchange="filterTable()">
+
+      <span class="filter-label">시장</span>
+      <select id="market-filter" onchange="filterTable()">
+        <option value="ALL">전체</option>
+        <option value="KOSPI">KOSPI</option>
+        <option value="KOSDAQ">KOSDAQ</option>
+      </select>
+
+      <span class="filter-label">정렬</span>
+      <select id="sort-by" onchange="sortAndRender()">
+        <option value="rsi">RSI 낮은순</option>
+        <option value="change">등락률순</option>
+        <option value="name">종목명순</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 진행 바 -->
+  <div class="progress-container" id="progress-container">
+    <div class="progress-header">
+      <span class="progress-text" id="progress-text">스캔 준비 중...</span>
+      <span class="progress-text" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- 공지 -->
+  <div class="notice">
+    💡 빠른 스캔: 주요 종목 약 35개 분석 (30초~1분) &nbsp;|&nbsp; 전체 스캔: 코스피/코스닥 전 종목 (10~30분 소요) &nbsp;|&nbsp; 데이터: Yahoo Finance (전일 종가 기준)
+  </div>
+
+  <!-- 테이블 -->
+  <div class="table-container">
+    <div class="table-header">
+      <div class="table-title">
+        RSI ≤ <span id="threshold-display">40</span> 종목
+        <span class="badge" id="result-count">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="tabs">
+          <div class="tab active" onclick="setView('rsi40', this)">RSI ≤ 40</div>
+          <div class="tab" onclick="setView('all', this)">전체 결과</div>
+        </div>
+        <input class="search-input" type="text" placeholder="종목명 검색..." oninput="filterTable()" id="search-input">
+      </div>
+    </div>
+
+    <div id="table-body">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">스캔을 시작하세요</div>
+        <div class="empty-desc">위의 '빠른 스캔' 또는 '전체 스캔' 버튼을 눌러<br>RSI 과매도 종목을 찾아보세요</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let allData = [];
+  let currentView = 'rsi40';
+  let scanInterval = null;
+
+  function setView(view, el) {
+    currentView = view;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    filterTable();
+  }
+
+  async function quickScan() {
+    const btn = document.getElementById('btn-quick');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 스캔 중...';
+    document.getElementById('btn-full').disabled = true;
+    document.getElementById('progress-container').classList.add('active');
+
+    startProgressPolling();
+
+    try {
+      const res = await fetch('/api/quick-scan');
+      const data = await res.json();
+      allData = data.all_data || data.data || [];
+      renderResults();
+    } catch(e) {
+      alert('스캔 중 오류가 발생했습니다: ' + e.message);
+    } finally {
+      stopProgressPolling();
+      btn.disabled = false;
+      btn.innerHTML = '⚡ 빠른 스캔 <span style="font-size:10px;opacity:0.7">주요 종목</span>';
+      document.getElementById('btn-full').disabled = false;
+      document.getElementById('progress-container').classList.remove('active');
+    }
+  }
+
+  async function fullScan() {
+    if (!confirm('전체 스캔은 10~30분 정도 소요됩니다. 진행하시겠습니까?')) return;
+
+    const btn = document.getElementById('btn-full');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 전체 스캔 중...';
+    document.getElementById('btn-quick').disabled = true;
+    document.getElementById('progress-container').classList.add('active');
+
+    startProgressPolling();
+
+    try {
+      const res = await fetch('/api/scan');
+      const data = await res.json();
+      allData = data.data || [];
+      renderResults();
+    } catch(e) {
+      alert('스캔 중 오류: ' + e.message);
+    } finally {
+      stopProgressPolling();
+      btn.disabled = false;
+      btn.innerHTML = '🔍 전체 스캔 <span style="font-size:10px;opacity:0.7">시간 소요</span>';
+      document.getElementById('btn-quick').disabled = false;
+      document.getElementById('progress-container').classList.remove('active');
+    }
+  }
+
+  function startProgressPolling() {
+    scanInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/status');
+        const status = await res.json();
+        const pct = status.total > 0 ? Math.round(status.progress / status.total * 100) : 0;
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-pct').textContent = pct + '%';
+        document.getElementById('progress-text').textContent = 
+          `분석 중: ${status.progress} / ${status.total} 종목`;
+      } catch(e) {}
+    }, 500);
+  }
+
+  function stopProgressPolling() {
+    if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+    document.getElementById('progress-fill').style.width = '100%';
+  }
+
+  function filterTable() {
+    const threshold = parseInt(document.getElementById('rsi-threshold').value) || 40;
+    const market = document.getElementById('market-filter').value;
+    const search = document.getElementById('search-input').value.toLowerCase();
+
+    document.getElementById('threshold-display').textContent = threshold;
+
+    let filtered = allData.filter(s => {
+      const matchMarket = market === 'ALL' || s.market === market;
+      const matchSearch = s.name.toLowerCase().includes(search) || s.code.includes(search);
+      const matchView = currentView === 'all' ? true : s.rsi <= threshold;
+      return matchMarket && matchSearch && matchView;
+    });
+
+    sortData(filtered);
+    renderTable(filtered);
+    updateStats(threshold);
+  }
+
+  function sortAndRender() { filterTable(); }
+
+  function sortData(data) {
+    const sortBy = document.getElementById('sort-by').value;
+    if (sortBy === 'rsi') data.sort((a,b) => a.rsi - b.rsi);
+    else if (sortBy === 'change') data.sort((a,b) => a.change_pct - b.change_pct);
+    else if (sortBy === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  }
+
+  function updateStats(threshold) {
+    const total = allData.length;
+    const strong = allData.filter(s => s.rsi <= 30).length;
+    const consider = allData.filter(s => s.rsi > 30 && s.rsi <= 40).length;
+    const filtered = allData.filter(s => s.rsi <= threshold).length;
+
+    document.getElementById('stat-total').textContent = total || '-';
+    document.getElementById('stat-strong').textContent = strong || '-';
+    document.getElementById('stat-consider').textContent = consider || '-';
+    document.getElementById('stat-filtered').textContent = filtered || '-';
+  }
+
+  function renderResults() {
+    const ts = new Date().toLocaleString('ko-KR');
+    document.getElementById('timestamp').textContent = `마지막 업데이트: ${ts}`;
+    filterTable();
+  }
+
+  function getRsiClass(rsi) {
+    if (rsi <= 20) return 'rsi-below20';
+    if (rsi <= 30) return 'rsi-below30';
+    return 'rsi-below40';
+  }
+
+  function getSignalHTML(rsi) {
+    if (rsi <= 30) return '<span class="signal-badge signal-strong">강한 매수</span>';
+    if (rsi <= 40) return '<span class="signal-badge signal-consider">매수 고려</span>';
+    return '<span class="signal-badge signal-watch">관망</span>';
+  }
+
+  function renderTable(data) {
+    const container = document.getElementById('table-body');
+    document.getElementById('result-count').textContent = data.length;
+
+    if (data.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">해당 조건의 종목이 없습니다</div>
+          <div class="empty-desc">RSI 기준값이나 시장 필터를 조정해보세요</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>종목</th>
+            <th>시장</th>
+            <th>현재가</th>
+            <th>등락률</th>
+            <th>RSI (14)</th>
+            <th>신호</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map((s, i) => `
+            <tr>
+              <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
+              <td>
+                <div class="stock-name">${s.name}</div>
+                <div class="stock-code">${s.code}</div>
+              </td>
+              <td><span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span></td>
+              <td class="price-cell">${Number(s.price).toLocaleString()}원</td>
+              <td class="${s.change_pct >= 0 ? 'change-positive' : 'change-negative'}">
+                ${s.change_pct >= 0 ? '+' : ''}${s.change_pct}%
+              </td>
+              <td>
+                <div class="rsi-wrapper">
+                  <span class="rsi-value" style="color:${s.rsi <= 30 ? 'var(--red)' : s.rsi <= 40 ? 'var(--yellow)' : 'var(--text)'}">${s.rsi}</span>
+                  <div class="rsi-bar">
+                    <div class="rsi-fill ${getRsiClass(s.rsi)}" style="width:${s.rsi}%"></div>
+                  </div>
+                </div>
+              </td>
+              <td>${getSignalHTML(s.rsi)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+</script>
+</body>
+</html>
