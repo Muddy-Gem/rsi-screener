@@ -665,57 +665,68 @@
     filterTable();
   }
 
-  async function quickScan() {
-    const btn = document.getElementById('btn-quick');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> 스캔 중...';
+  function setScanningUI() {
+    document.getElementById('btn-quick').disabled = true;
+    document.getElementById('btn-quick').innerHTML = '<span class="spinner"></span> 스캔 중...';
     document.getElementById('btn-full').disabled = true;
     document.getElementById('progress-container').classList.add('active');
+  }
 
+  function resetScanUI() {
+    document.getElementById('btn-quick').disabled = false;
+    document.getElementById('btn-quick').innerHTML = '⚡ 빠른 스캔 <span style="font-size:10px;opacity:0.7">주요 종목</span>';
+    document.getElementById('btn-full').disabled = false;
+    document.getElementById('btn-full').innerHTML = '🔍 전체 스캔 <span style="font-size:10px;opacity:0.7">시간 소요</span>';
+    document.getElementById('progress-container').classList.remove('active');
+  }
+
+  async function quickScan() {
+    setScanningUI();
     try {
-      // 스캔 시작만 요청 (백그라운드에서 실행됨)
-      await fetch('/api/quick-scan');
-      // 폴링으로 결과 확인
-      startProgressPolling(() => {
-        btn.disabled = false;
-        btn.innerHTML = '⚡ 빠른 스캔 <span style="font-size:10px;opacity:0.7">주요 종목</span>';
-        document.getElementById('btn-full').disabled = false;
-        document.getElementById('progress-container').classList.remove('active');
-      });
+      const res = await fetch('/api/quick-scan');
+      const data = await res.json();
+      if (data.status === 'scanning') {
+        document.getElementById('progress-text').textContent = data.message || '스캔 중...';
+        startProgressPolling(resetScanUI);
+      }
     } catch(e) {
       alert('스캔 시작 오류: ' + e.message);
-      btn.disabled = false;
-      btn.innerHTML = '⚡ 빠른 스캔 <span style="font-size:10px;opacity:0.7">주요 종목</span>';
-      document.getElementById('btn-full').disabled = false;
-      document.getElementById('progress-container').classList.remove('active');
+      resetScanUI();
     }
   }
 
   async function fullScan() {
     if (!confirm('전체 스캔은 시간이 소요됩니다. 진행하시겠습니까?')) return;
-
-    const btn = document.getElementById('btn-full');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> 전체 스캔 중...';
-    document.getElementById('btn-quick').disabled = true;
-    document.getElementById('progress-container').classList.add('active');
-
+    setScanningUI();
     try {
-      await fetch('/api/scan');
-      startProgressPolling(() => {
-        btn.disabled = false;
-        btn.innerHTML = '🔍 전체 스캔 <span style="font-size:10px;opacity:0.7">시간 소요</span>';
-        document.getElementById('btn-quick').disabled = false;
-        document.getElementById('progress-container').classList.remove('active');
-      });
+      const res = await fetch('/api/scan');
+      const data = await res.json();
+      if (data.status === 'scanning') {
+        document.getElementById('progress-text').textContent = data.message || '스캔 중...';
+        startProgressPolling(resetScanUI);
+      }
     } catch(e) {
       alert('스캔 시작 오류: ' + e.message);
-      btn.disabled = false;
-      btn.innerHTML = '🔍 전체 스캔 <span style="font-size:10px;opacity:0.7">시간 소요</span>';
-      document.getElementById('btn-quick').disabled = false;
-      document.getElementById('progress-container').classList.remove('active');
+      resetScanUI();
     }
   }
+
+  async function checkInitialStatus() {
+    try {
+      const res = await fetch('/api/status');
+      const status = await res.json();
+      if (status.status === 'scanning') {
+        setScanningUI();
+        startProgressPolling(resetScanUI);
+      } else if (status.status === 'done' && status.count > 0) {
+        const r = await fetch('/api/results');
+        const data = await r.json();
+        allData = data.all_data || data.data || [];
+        renderResults();
+      }
+    } catch(e) {}
+  }
+  checkInitialStatus();
 
   function startProgressPolling(onDone) {
     if (scanInterval) clearInterval(scanInterval);
