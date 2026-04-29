@@ -337,8 +337,14 @@
       if (s.sortBy) document.getElementById('sort-by').value = s.sortBy;
       if (s.searchM) document.getElementById('search-mobile').value = s.searchM;
       if (s.searchD) document.getElementById('search-desktop').value = s.searchD;
-      if (s.view) { currentView = s.view; syncTabs(s.view); }
-    } catch(e){}
+      // 탭 복원: rsi40 탭이 기본값, 저장된 값이 있으면 복원
+      const view = s.view || 'rsi40';
+      currentView = view;
+      syncTabs(view);
+    } catch(e){
+      currentView = 'rsi40';
+      syncTabs('rsi40');
+    }
   }
 
   function syncTabs(view){
@@ -432,13 +438,13 @@
     const q = getSearch();
     document.getElementById('threshold-display').textContent = thr;
 
-    let list = allData.filter(s =>
-      (mkt==='ALL'||s.market===mkt) &&
-      (s.name.toLowerCase().includes(q)||s.code.includes(q)) &&
-      (currentView==='all' ? true :
-       currentView==='promising' ? s.score>=3 :
-       s.rsi<=thr)
-    );
+    let list = allData.filter(s => {
+      if (!(mkt==='ALL'||s.market===mkt)) return false;
+      if (!(s.name.toLowerCase().includes(q)||s.code.includes(q))) return false;
+      if (currentView==='all') return true;
+      if (currentView==='promising') return s.score>=3;
+      return s.rsi <= thr; // rsi40 탭
+    });
     sortData(list);
     renderTable(list);
     updateStats(thr);
