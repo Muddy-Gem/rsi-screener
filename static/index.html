@@ -10,6 +10,7 @@
     --bg:#0a0e1a; --surface:#141e2e; --surface2:#1e2d42;
     --border:#2a3f5f; --accent:#00d4ff; --accent2:#ff6b35;
     --green:#00e676; --red:#ff1744; --yellow:#ffd600;
+    --purple:#b388ff; --orange:#ff9800;
     --text:#f1f5f9; --text-dim:#94a3b8; --text-bright:#ffffff;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -32,6 +33,7 @@
   .stat-card.red::before{background:var(--red);}
   .stat-card.yellow::before{background:var(--yellow);}
   .stat-card.green::before{background:var(--green);}
+  .stat-card.purple::before{background:var(--purple);}
   .stat-label{font-size:10px;color:#b0bec5;text-transform:uppercase;letter-spacing:0.5px;font-family:'IBM Plex Mono',monospace;margin-bottom:4px;font-weight:500;}
   .stat-value{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text-bright);line-height:1;}
   .stat-desc{font-size:10px;color:#90a4b8;margin-top:4px;}
@@ -39,7 +41,7 @@
   /* 컨트롤 */
   .control-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
   .btn-row{display:flex;gap:10px;margin-bottom:12px;}
-  .btn{flex:1;padding:13px 8px;border-radius:8px;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;}
+  .btn{flex:1;padding:13px 8px;border-radius:8px;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;}
   .btn-primary{background:var(--accent);color:#000;}
   .btn-primary:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
@@ -68,17 +70,23 @@
   .badge{background:rgba(0,212,255,0.15);color:var(--accent);padding:2px 8px;border-radius:99px;font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:600;}
   .th-row2{display:flex;gap:8px;align-items:center;}
   .tabs{display:flex;gap:4px;flex-shrink:0;}
-  .tab{padding:7px 12px;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;color:#90a8c0;border:1px solid transparent;transition:all 0.2s;white-space:nowrap;}
+  .tab{padding:7px 10px;border-radius:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;color:#90a8c0;border:1px solid transparent;transition:all 0.2s;white-space:nowrap;}
   .tab.active{background:rgba(0,212,255,0.1);color:var(--accent);border-color:rgba(0,212,255,0.2);}
   .search-input{flex:1;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;min-width:0;}
   .search-input:focus{border-color:var(--accent);}
 
-  /* 모바일 카드 */
+  /* ── 모바일 카드 ── */
   .mobile-cards{display:block;}
   .desktop-table{display:none;}
-  .stock-card{padding:14px;border-bottom:1px solid rgba(42,63,95,0.6);}
+
+  .stock-card{padding:14px;border-bottom:1px solid rgba(42,63,95,0.6);position:relative;}
   .stock-card:last-child{border-bottom:none;}
-  .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+
+  /* 강력매수 카드 하이라이트 */
+  .stock-card.highlight{border-left:3px solid var(--green);background:rgba(0,230,118,0.03);}
+  .stock-card.highlight-strong{border-left:3px solid var(--red);}
+
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
   .card-left{flex:1;min-width:0;}
   .card-rank{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:2px;}
   .card-name{font-size:16px;font-weight:700;color:var(--text-bright);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -87,42 +95,50 @@
   .market-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;}
   .market-kospi{background:rgba(0,212,255,0.12);color:var(--accent);}
   .market-kosdaq{background:rgba(255,107,53,0.12);color:var(--accent2);}
-  .card-right{flex-shrink:0;padding-left:16px;text-align:right;}
+  .card-right{flex-shrink:0;padding-left:12px;text-align:right;}
   .card-rsi-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
-  .card-rsi-num{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:700;line-height:1;margin-bottom:5px;}
-  .card-rsi-bar-wrap{margin-bottom:8px;}
+  .card-rsi-num{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:700;line-height:1;margin-bottom:5px;}
+
+  /* RSI 바 */
+  .card-rsi-bar-wrap{margin-bottom:10px;}
   .rsi-bar-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
   .rsi-fill{height:100%;border-radius:99px;}
   .rsi-below20{background:#ff1744;}
   .rsi-below30{background:#ff6d00;}
   .rsi-below40{background:#ffd600;}
   .rsi-above40{background:#4caf50;}
-  .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
+
+  /* 지표 태그 */
+  .indicators{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+  .ind-tag{padding:3px 8px;border-radius:5px;font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;white-space:nowrap;}
+  .ind-green{background:rgba(0,230,118,0.12);color:var(--green);border:1px solid rgba(0,230,118,0.25);}
+  .ind-red{background:rgba(255,23,68,0.12);color:#ff5252;border:1px solid rgba(255,23,68,0.25);}
+  .ind-yellow{background:rgba(255,214,0,0.12);color:var(--yellow);border:1px solid rgba(255,214,0,0.25);}
+  .ind-blue{background:rgba(0,212,255,0.12);color:var(--accent);border:1px solid rgba(0,212,255,0.25);}
+  .ind-purple{background:rgba(179,136,255,0.12);color:var(--purple);border:1px solid rgba(179,136,255,0.25);}
+  .ind-dim{background:rgba(100,116,139,0.12);color:var(--text-dim);border:1px solid var(--border);}
+
+  /* 카드 하단 수치 */
+  .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
   .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
-  .card-stat-value{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--text-bright);}
+  .card-stat-value{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--text-bright);}
   .card-stat-value.up{color:var(--red);}
   .card-stat-value.down{color:#4fc3f7;}
 
+  /* 신호 배지 */
   .signal-badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;white-space:nowrap;display:inline-block;}
+  .signal-top{background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.4);}
+  .signal-good{background:rgba(0,212,255,0.15);color:var(--accent);border:1px solid rgba(0,212,255,0.3);}
   .signal-strong{background:rgba(255,23,68,0.15);color:#ff5252;border:1px solid rgba(255,23,68,0.3);}
   .signal-consider{background:rgba(255,214,0,0.15);color:#ffd600;border:1px solid rgba(255,214,0,0.3);}
   .signal-watch{background:rgba(100,116,139,0.15);color:var(--text-dim);border:1px solid var(--border);}
 
-  /* 데스크탑 테이블 */
-  table{width:100%;border-collapse:collapse;}
-  th{padding:12px 16px;text-align:left;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#90a4ae;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;font-weight:600;}
-  th:hover{color:var(--accent);}
-  td{padding:14px 16px;border-bottom:1px solid rgba(30,45,69,0.5);font-size:14px;vertical-align:middle;}
-  tr:last-child td{border-bottom:none;}
-  tr:hover td{background:rgba(0,212,255,0.03);}
-  .stock-name{font-weight:600;color:var(--text-bright);}
-  .stock-code{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7896b0;margin-top:2px;}
-  .price-cell{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--text-bright);}
-  .change-pos{color:var(--red);font-family:'IBM Plex Mono',monospace;}
-  .change-neg{color:#4fc3f7;font-family:'IBM Plex Mono',monospace;}
-  .rsi-wrapper{display:flex;align-items:center;gap:10px;}
-  .rsi-val{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px;min-width:44px;}
-  .rsi-bar-desktop{flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;min-width:80px;}
+  /* 52주 바 */
+  .week52-bar{margin-top:8px;}
+  .week52-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;display:flex;justify-content:space-between;}
+  .week52-track{height:4px;background:var(--border);border-radius:99px;position:relative;}
+  .week52-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#4fc3f7,var(--accent));}
+  .week52-dot{position:absolute;top:-3px;width:10px;height:10px;border-radius:50%;background:var(--yellow);border:2px solid var(--bg);transform:translateX(-50%);}
 
   /* 빈 상태 */
   .empty-state{text-align:center;padding:60px 20px;}
@@ -133,6 +149,25 @@
   .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
+  /* ── 데스크탑 테이블 ── */
+  table{width:100%;border-collapse:collapse;}
+  th{padding:12px 16px;text-align:left;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#90a4ae;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;font-weight:600;}
+  th:hover{color:var(--accent);}
+  td{padding:12px 16px;border-bottom:1px solid rgba(30,45,69,0.5);font-size:13px;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(0,212,255,0.03);}
+  tr.row-highlight td{background:rgba(0,230,118,0.04);}
+  .stock-name{font-weight:600;color:var(--text-bright);font-size:14px;}
+  .stock-code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7896b0;margin-top:1px;}
+  .price-cell{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--text-bright);}
+  .change-pos{color:var(--red);font-family:'IBM Plex Mono',monospace;}
+  .change-neg{color:#4fc3f7;font-family:'IBM Plex Mono',monospace;}
+  .rsi-wrapper{display:flex;align-items:center;gap:8px;}
+  .rsi-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px;min-width:40px;}
+  .rsi-bar-desktop{flex:1;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden;min-width:60px;}
+  .ind-tags-desktop{display:flex;flex-wrap:wrap;gap:3px;}
+  .score-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;}
+
   /* 반응형 */
   @media(min-width:768px){
     .wrap{padding:24px;}
@@ -141,8 +176,7 @@
     .stats-grid{grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
     .stat-card{padding:20px;}
     .stat-value{font-size:32px;}
-    .stat-label{font-size:12px;}
-    .stat-desc{font-size:12px;}
+    .stat-label,.stat-desc{font-size:12px;}
     .control-panel{display:flex;align-items:center;gap:16px;padding:20px 24px;}
     .btn-row{margin-bottom:0;flex:none;}
     .btn{flex:none;padding:10px 20px;font-size:13px;}
@@ -168,7 +202,7 @@
       <div class="logo-icon">RSI</div>
       <div>
         <h1>RSI 스크리너</h1>
-        <div class="subtitle">KOSPI / KOSDAQ · 과매도 종목 탐색기</div>
+        <div class="subtitle">KOSPI / KOSDAQ · 과매도 + 다중 지표 분석</div>
       </div>
     </div>
     <div class="timestamp" id="timestamp">업데이트: -</div>
@@ -191,9 +225,9 @@
       <div class="stat-desc">매수 고려</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">필터 결과</div>
-      <div class="stat-value" id="stat-filtered">-</div>
-      <div class="stat-desc">표시 종목</div>
+      <div class="stat-label">매수 유망</div>
+      <div class="stat-value" id="stat-promising">-</div>
+      <div class="stat-desc">3개↑ 지표 충족</div>
     </div>
   </div>
 
@@ -218,6 +252,7 @@
       <div class="filter-item">
         <span class="filter-label">정렬</span>
         <select id="sort-by" onchange="saveSettings();sortAndRender()">
+          <option value="score">종합점수순</option>
           <option value="rsi">RSI순</option>
           <option value="change">등락률</option>
           <option value="name">종목명</option>
@@ -237,8 +272,8 @@
   </div>
 
   <div class="notice">
-    💡 스캔 실행: 200개 주요 종목 분석 (약 1~2분)<br>
-    매일 오전 8시 자동 갱신 · 데이터: Yahoo Finance (전일종가)
+    💡 RSI + 이동평균(20/60일) + 볼린저밴드 + MACD + 52주 고저 분석<br>
+    매일 오전 8시 자동 갱신 · 데이터: Yahoo Finance (전일종가 기준)
   </div>
 
   <div class="table-container">
@@ -248,131 +283,110 @@
           RSI ≤ <span id="threshold-display">40</span>&nbsp;종목
           <span class="badge" id="result-count">0</span>
         </div>
-        <!-- PC 전용 탭+검색 -->
         <div class="desktop-table" style="display:flex;align-items:center;gap:12px;">
           <div class="tabs">
-            <div class="tab active" id="tab-filtered-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
-            <div class="tab" id="tab-all-d" onclick="setView('all',this)">전체</div>
+            <div class="tab active" id="tab-f-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
+            <div class="tab" id="tab-p-d" onclick="setView('promising',this)">매수유망</div>
+            <div class="tab" id="tab-a-d" onclick="setView('all',this)">전체</div>
           </div>
-          <input class="search-input" style="width:180px;" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-desktop">
+          <input class="search-input" style="width:160px;" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-desktop">
         </div>
       </div>
-      <!-- 모바일 전용 탭+검색 -->
       <div class="th-row2">
         <div class="tabs">
-          <div class="tab active" id="tab-filtered-m" onclick="setView('rsi40',this)">RSI ≤ 40</div>
-          <div class="tab" id="tab-all-m" onclick="setView('all',this)">전체</div>
+          <div class="tab active" id="tab-f-m" onclick="setView('rsi40',this)">RSI≤40</div>
+          <div class="tab" id="tab-p-m" onclick="setView('promising',this)">매수유망</div>
+          <div class="tab" id="tab-a-m" onclick="setView('all',this)">전체</div>
         </div>
-        <input class="search-input" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-mobile">
+        <input class="search-input" type="text" placeholder="검색..." oninput="saveSettings();filterTable()" id="search-mobile">
       </div>
     </div>
     <div id="table-body">
       <div class="empty-state">
         <div class="empty-icon">📊</div>
         <div class="empty-title">스캔을 시작하세요</div>
-        <div class="empty-desc">'스캔 실행' 버튼을 눌러<br>RSI 과매도 종목을 찾아보세요</div>
+        <div class="empty-desc">'스캔 실행' 버튼을 눌러<br>RSI + 다중 지표 분석을 시작하세요</div>
       </div>
     </div>
   </div>
-
 </div>
+
 <script>
   let allData=[], currentView='rsi40', scanInterval=null;
+  const SETTINGS_KEY='rsi_screener_v2_settings';
 
-  // ── 설정 저장/불러오기 (localStorage) ──
-  const SETTINGS_KEY = 'rsi_screener_settings';
-
-  function saveSettings() {
+  // ── 설정 저장/복원 ──
+  function saveSettings(){
     try {
-      const s = {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
         threshold: document.getElementById('rsi-threshold').value,
         market: document.getElementById('market-filter').value,
         sortBy: document.getElementById('sort-by').value,
         view: currentView,
-        searchMobile: document.getElementById('search-mobile').value,
-        searchDesktop: document.getElementById('search-desktop').value,
-      };
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+        searchM: document.getElementById('search-mobile').value,
+        searchD: document.getElementById('search-desktop').value,
+      }));
     } catch(e){}
   }
 
-  function loadSettings() {
+  function loadSettings(){
     try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw);
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
       if (s.threshold) document.getElementById('rsi-threshold').value = s.threshold;
       if (s.market) document.getElementById('market-filter').value = s.market;
       if (s.sortBy) document.getElementById('sort-by').value = s.sortBy;
-      if (s.searchMobile) document.getElementById('search-mobile').value = s.searchMobile;
-      if (s.searchDesktop) document.getElementById('search-desktop').value = s.searchDesktop;
-      if (s.view && s.view !== 'rsi40') {
-        currentView = s.view;
-        // 탭 active 상태 복원
-        ['tab-filtered-m','tab-filtered-d'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.classList.remove('active');
-        });
-        ['tab-all-m','tab-all-d'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.classList.add('active');
-        });
-      }
+      if (s.searchM) document.getElementById('search-mobile').value = s.searchM;
+      if (s.searchD) document.getElementById('search-desktop').value = s.searchD;
+      if (s.view) { currentView = s.view; syncTabs(s.view); }
     } catch(e){}
   }
 
-  function setView(view, el) {
+  function syncTabs(view){
+    const map = {rsi40:'f', promising:'p', all:'a'};
+    ['f','p','a'].forEach(k => {
+      ['m','d'].forEach(s => {
+        const el = document.getElementById(`tab-${k}-${s}`);
+        if (el) el.classList.toggle('active', map[view]===k);
+      });
+    });
+  }
+
+  function setView(view, el){
     currentView = view;
-    // 모바일/PC 탭 동기화
-    ['tab-filtered-m','tab-filtered-d'].forEach(id => {
-      const t = document.getElementById(id);
-      if (t) t.classList.toggle('active', view==='rsi40');
-    });
-    ['tab-all-m','tab-all-d'].forEach(id => {
-      const t = document.getElementById(id);
-      if (t) t.classList.toggle('active', view==='all');
-    });
+    syncTabs(view);
     saveSettings();
     filterTable();
   }
 
-  function setScanUI(on) {
-    const qb = document.getElementById('btn-quick');
-    const rb = document.getElementById('btn-refresh');
-    qb.disabled = on;
-    rb.disabled = on;
-    qb.innerHTML = on ? '<span class="spinner"></span> 스캔 중...' : '⚡ 스캔 실행';
+  // ── 스캔 UI ──
+  function setScanUI(on){
+    document.getElementById('btn-quick').disabled = on;
+    document.getElementById('btn-refresh').disabled = on;
+    document.getElementById('btn-quick').innerHTML = on ? '<span class="spinner"></span> 스캔 중...' : '⚡ 스캔 실행';
     document.getElementById('progress-container').classList.toggle('active', on);
   }
 
-  async function quickScan() {
+  async function quickScan(){
     setScanUI(true);
     try {
       const r = await fetch('/api/quick-scan');
       const d = await r.json();
-      if (d.status==='scanning') {
-        document.getElementById('progress-text').textContent = d.message||'스캔 중...';
-        poll();
-      }
-    } catch(e) { alert('오류: '+e.message); setScanUI(false); }
+      if (d.status==='scanning'){ document.getElementById('progress-text').textContent=d.message||'스캔 중...'; poll(); }
+    } catch(e){ alert('오류: '+e.message); setScanUI(false); }
   }
 
-  async function loadCachedResults() {
+  async function loadCachedResults(){
     try {
       const r = await fetch('/api/results');
       const d = await r.json();
-      if (d.all_data && d.all_data.length > 0) {
-        allData = d.all_data;
-        renderResults(d.timestamp);
-      } else {
-        alert('저장된 결과가 없습니다. 스캔을 실행해주세요.');
-      }
-    } catch(e) { alert('오류: '+e.message); }
+      if (d.all_data && d.all_data.length>0){ allData=d.all_data; renderResults(d.timestamp); }
+      else alert('저장된 결과가 없습니다. 스캔을 실행해주세요.');
+    } catch(e){ alert('오류: '+e.message); }
   }
 
-  function poll() {
+  function poll(){
     if (scanInterval) clearInterval(scanInterval);
-    scanInterval = setInterval(async () => {
+    scanInterval = setInterval(async ()=>{
       try {
         const r = await fetch('/api/status');
         const s = await r.json();
@@ -380,11 +394,11 @@
         document.getElementById('progress-fill').style.width = pct+'%';
         document.getElementById('progress-pct').textContent = pct+'%';
         document.getElementById('progress-text').textContent = `분석 중: ${s.progress} / ${s.total} 종목`;
-        if (s.status==='done') {
+        if (s.status==='done'){
           clearInterval(scanInterval); scanInterval=null;
           const res = await fetch('/api/results');
           const data = await res.json();
-          allData = data.all_data || data.data || [];
+          allData = data.all_data||data.data||[];
           renderResults(data.timestamp);
           setScanUI(false);
         }
@@ -392,102 +406,151 @@
     }, 500);
   }
 
-  // ── 초기 로드 ──
-  (async function init() {
-    loadSettings(); // 저장된 설정 먼저 복원
+  // ── 초기화 ──
+  (async function init(){
+    loadSettings();
     try {
       const r = await fetch('/api/status');
       const s = await r.json();
-      if (s.status==='scanning') {
-        setScanUI(true); poll();
-      } else if (s.status==='done' && s.count>0) {
-        // 캐시된 결과 자동 표시
+      if (s.status==='scanning'){ setScanUI(true); poll(); }
+      else if (s.status==='done' && s.count>0){
         const res = await fetch('/api/results');
         const data = await res.json();
-        allData = data.all_data || data.data || [];
+        allData = data.all_data||data.data||[];
         renderResults(data.timestamp);
       }
     } catch(e){}
   })();
 
-  function getSearch() {
-    return (document.getElementById('search-mobile').value ||
-            document.getElementById('search-desktop').value || '').toLowerCase();
+  function getSearch(){
+    return (document.getElementById('search-mobile').value||document.getElementById('search-desktop').value||'').toLowerCase();
   }
 
-  function filterTable() {
+  function filterTable(){
     const thr = parseInt(document.getElementById('rsi-threshold').value)||40;
     const mkt = document.getElementById('market-filter').value;
     const q = getSearch();
     document.getElementById('threshold-display').textContent = thr;
+
     let list = allData.filter(s =>
       (mkt==='ALL'||s.market===mkt) &&
       (s.name.toLowerCase().includes(q)||s.code.includes(q)) &&
-      (currentView==='all'||s.rsi<=thr)
+      (currentView==='all' ? true :
+       currentView==='promising' ? s.score>=3 :
+       s.rsi<=thr)
     );
     sortData(list);
     renderTable(list);
     updateStats(thr);
   }
 
-  function sortAndRender() { filterTable(); }
+  function sortAndRender(){ filterTable(); }
 
-  function sortData(d) {
+  function sortData(d){
     const by = document.getElementById('sort-by').value;
-    if (by==='rsi') d.sort((a,b)=>a.rsi-b.rsi);
+    if (by==='score') d.sort((a,b)=>b.score-a.score||a.rsi-b.rsi);
+    else if (by==='rsi') d.sort((a,b)=>a.rsi-b.rsi);
     else if (by==='change') d.sort((a,b)=>a.change_pct-b.change_pct);
     else d.sort((a,b)=>a.name.localeCompare(b.name,'ko'));
   }
 
-  function updateStats(thr) {
+  function updateStats(thr){
     document.getElementById('stat-total').textContent = allData.length||'-';
     document.getElementById('stat-strong').textContent = allData.filter(s=>s.rsi<=30).length||'-';
-    document.getElementById('stat-consider').textContent = allData.filter(s=>s.rsi>30&&s.rsi<=40).length||'-';
-    document.getElementById('stat-filtered').textContent = allData.filter(s=>s.rsi<=thr).length||'-';
+    document.getElementById('stat-consider').textContent = allData.filter(s=>s.rsi<=40).length||'-';
+    document.getElementById('stat-promising').textContent = allData.filter(s=>s.score>=3).length||'-';
   }
 
-  function renderResults(ts) {
-    if (ts) document.getElementById('timestamp').textContent = '업데이트: '+ts;
-    else document.getElementById('timestamp').textContent = '업데이트: '+new Date().toLocaleString('ko-KR');
+  function renderResults(ts){
+    document.getElementById('timestamp').textContent = '업데이트: '+(ts||new Date().toLocaleString('ko-KR'));
     filterTable();
   }
 
+  // ── 헬퍼 ──
   function rc(r){return r<=20?'rsi-below20':r<=30?'rsi-below30':r<=40?'rsi-below40':'rsi-above40';}
   function rcolor(r){return r<=30?'var(--red)':r<=40?'var(--yellow)':'var(--text)';}
-  function sig(r){
-    if(r<=30) return '<span class="signal-badge signal-strong">강한 매수</span>';
-    if(r<=40) return '<span class="signal-badge signal-consider">매수 고려</span>';
-    return '<span class="signal-badge signal-watch">관망</span>';
+
+  function sigHTML(s){
+    const map = {
+      '강력매수': 'signal-top',
+      '매수유망': 'signal-good',
+      '강한매수': 'signal-strong',
+      '매수고려': 'signal-consider',
+      '관망': 'signal-watch',
+    };
+    return `<span class="signal-badge ${map[s]||'signal-watch'}">${s}</span>`;
   }
 
-  function renderTable(data) {
+  function indTags(s){
+    const tags = [];
+    if (s.rsi<=30) tags.push(['ind-red','RSI극과매도']);
+    else if (s.rsi<=40) tags.push(['ind-yellow','RSI과매도']);
+    if (s.above_ma20) tags.push(['ind-blue','MA20위']);
+    else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
+    else tags.push(['ind-dim','MA20아래']);
+    if (s.above_ma60) tags.push(['ind-green','MA60위']);
+    if (s.near_bb_lower) tags.push(['ind-purple','볼린저하단']);
+    if (s.macd_golden) tags.push(['ind-green','MACD골든']);
+    return tags.map(([cls,txt])=>`<span class="ind-tag ${cls}">${txt}</span>`).join('');
+  }
+
+  function indTagsDesktop(s){
+    const tags = [];
+    if (s.above_ma20) tags.push(['ind-blue','MA20↑']);
+    else if (s.near_ma20) tags.push(['ind-blue','MA20~']);
+    if (s.near_bb_lower) tags.push(['ind-purple','BB하단']);
+    if (s.macd_golden) tags.push(['ind-green','MACD✓']);
+    return tags.map(([cls,txt])=>`<span class="ind-tag ${cls}">${txt}</span>`).join('');
+  }
+
+  function week52Bar(s){
+    const range = s.high_52 - s.low_52;
+    const pos = range>0 ? Math.round((s.price - s.low_52)/range*100) : 50;
+    return `
+      <div class="week52-bar">
+        <div class="week52-label">
+          <span>52주저 ${Number(s.low_52).toLocaleString()}</span>
+          <span>${pos}%</span>
+          <span>52주고 ${Number(s.high_52).toLocaleString()}</span>
+        </div>
+        <div class="week52-track">
+          <div class="week52-fill" style="width:${pos}%"></div>
+          <div class="week52-dot" style="left:${pos}%"></div>
+        </div>
+      </div>`;
+  }
+
+  function renderTable(data){
     const el = document.getElementById('table-body');
     document.getElementById('result-count').textContent = data.length;
-    if (!data.length) {
-      el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">해당 조건의 종목이 없습니다</div><div class="empty-desc">RSI 기준값이나 시장 필터를 조정해보세요</div></div>`;
+    if (!data.length){
+      el.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">해당 조건의 종목이 없습니다</div><div class="empty-desc">RSI 기준값이나 필터를 조정해보세요</div></div>`;
       return;
     }
 
+    // 모바일 카드
     const cards = `<div class="mobile-cards">${data.map((s,i)=>`
-      <div class="stock-card">
+      <div class="stock-card ${s.score>=4?'highlight':s.rsi<=30?'highlight-strong':''}">
         <div class="card-top">
           <div class="card-left">
-            <div class="card-rank">#${i+1}</div>
+            <div class="card-rank">#${i+1} · 종합점수 ${s.score}/5</div>
             <div class="card-name">${s.name}</div>
             <div class="card-meta">
               <span class="card-code">${s.code}</span>
               <span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span>
+              ${sigHTML(s.signal)}
             </div>
           </div>
           <div class="card-right">
             <div class="card-rsi-label">RSI (14)</div>
             <div class="card-rsi-num" style="color:${rcolor(s.rsi)}">${s.rsi}</div>
-            ${sig(s.rsi)}
           </div>
         </div>
         <div class="card-rsi-bar-wrap">
           <div class="rsi-bar-track"><div class="rsi-fill ${rc(s.rsi)}" style="width:${s.rsi}%"></div></div>
         </div>
+        <div class="indicators">${indTags(s)}</div>
+        ${week52Bar(s)}
         <div style="height:8px;"></div>
         <div class="card-bottom">
           <div>
@@ -495,8 +558,8 @@
             <div class="card-stat-value">${Number(s.price).toLocaleString()}원</div>
           </div>
           <div style="text-align:center;">
-            <div class="card-stat-label">시장</div>
-            <span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span>
+            <div class="card-stat-label">MA20</div>
+            <div class="card-stat-value" style="font-size:12px;">${Number(s.ma20).toLocaleString()}</div>
           </div>
           <div style="text-align:right;">
             <div class="card-stat-label">등락률</div>
@@ -505,12 +568,19 @@
         </div>
       </div>`).join('')}</div>`;
 
+    // 데스크탑 테이블
     const table = `<div class="desktop-table"><table>
-      <thead><tr><th>#</th><th>종목</th><th>시장</th><th>현재가</th><th>등락률</th><th>RSI (14)</th><th>신호</th></tr></thead>
+      <thead><tr>
+        <th>#</th><th>종목</th><th>시장</th><th>현재가</th><th>등락률</th>
+        <th>RSI(14)</th><th>BB%</th><th>지표</th><th>52주위치</th><th>신호</th>
+      </tr></thead>
       <tbody>${data.map((s,i)=>`
-        <tr>
+        <tr class="${s.score>=4?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
-          <td><div class="stock-name">${s.name}</div><div class="stock-code">${s.code}</div></td>
+          <td>
+            <div class="stock-name">${s.name}</div>
+            <div class="stock-code">${s.code} · 점수 ${s.score}/5</div>
+          </td>
           <td><span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span></td>
           <td class="price-cell">${Number(s.price).toLocaleString()}원</td>
           <td class="${s.change_pct>=0?'change-pos':'change-neg'}">${s.change_pct>=0?'+':''}${s.change_pct}%</td>
@@ -520,7 +590,12 @@
               <div class="rsi-bar-desktop"><div class="rsi-fill ${rc(s.rsi)}" style="width:${s.rsi}%"></div></div>
             </div>
           </td>
-          <td>${sig(s.rsi)}</td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${s.near_bb_lower?'var(--purple)':'var(--text-dim)'};">${s.bb_pct}%</td>
+          <td><div class="ind-tags-desktop">${indTagsDesktop(s)}</div></td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);">
+            저+${s.pct_from_low}%<br>고${s.pct_from_high}%
+          </td>
+          <td>${sigHTML(s.signal)}</td>
         </tr>`).join('')}
       </tbody></table></div>`;
 
