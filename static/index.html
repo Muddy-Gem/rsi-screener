@@ -17,7 +17,7 @@
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
   .wrap{max-width:1400px;margin:0 auto;padding:14px;position:relative;z-index:1;}
 
-  /* ── 헤더 ── */
+  /* 헤더 */
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
   .logo{display:flex;align-items:center;gap:10px;}
   .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#0080ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:#000;flex-shrink:0;}
@@ -25,7 +25,7 @@
   .subtitle{font-size:10px;color:#90a8c0;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
   .timestamp{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#90a8c0;text-align:right;}
 
-  /* ── 통계 카드 (모바일: 2x2, PC: 4x1) ── */
+  /* 통계 카드 */
   .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;position:relative;overflow:hidden;}
   .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
@@ -36,7 +36,7 @@
   .stat-value{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text-bright);line-height:1;}
   .stat-desc{font-size:10px;color:#90a4b8;margin-top:4px;}
 
-  /* ── 컨트롤 ── */
+  /* 컨트롤 */
   .control-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
   .btn-row{display:flex;gap:10px;margin-bottom:12px;}
   .btn{flex:1;padding:13px 8px;border-radius:8px;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;}
@@ -49,7 +49,7 @@
   .filter-label{font-size:11px;color:#b0c4d8;font-family:'IBM Plex Mono',monospace;}
   select,input[type="number"]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;width:100%;-webkit-appearance:none;}
 
-  /* ── 진행바 ── */
+  /* 진행바 */
   .progress-container{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;display:none;}
   .progress-container.active{display:block;}
   .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
@@ -57,13 +57,11 @@
   .progress-bar-bg{background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;}
   .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#0080ff);border-radius:99px;transition:width 0.3s ease;width:0%;}
 
-  /* ── 공지 ── */
+  /* 공지 */
   .notice{background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:10px 12px;font-size:11px;color:#a0b8cc;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;line-height:1.7;}
 
-  /* ── 테이블 컨테이너 ── */
+  /* 테이블 컨테이너 */
   .table-container{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-
-  /* 테이블 헤더 (모바일) */
   .table-header{padding:12px 14px;border-bottom:1px solid var(--border);}
   .th-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .table-title{font-size:14px;font-weight:600;color:var(--text-bright);display:flex;align-items:center;gap:6px;white-space:nowrap;}
@@ -75,14 +73,11 @@
   .search-input{flex:1;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;min-width:0;}
   .search-input:focus{border-color:var(--accent);}
 
-  /* ── 모바일 카드 ── */
+  /* 모바일 카드 */
   .mobile-cards{display:block;}
   .desktop-table{display:none;}
-
   .stock-card{padding:14px;border-bottom:1px solid rgba(42,63,95,0.6);}
   .stock-card:last-child{border-bottom:none;}
-
-  /* 카드 상단: 왼쪽(종목정보) / 오른쪽(RSI) */
   .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .card-left{flex:1;min-width:0;}
   .card-rank{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:2px;}
@@ -93,43 +88,27 @@
   .market-kospi{background:rgba(0,212,255,0.12);color:var(--accent);}
   .market-kosdaq{background:rgba(255,107,53,0.12);color:var(--accent2);}
   .card-right{flex-shrink:0;padding-left:16px;text-align:right;}
+  .card-rsi-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
   .card-rsi-num{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:700;line-height:1;margin-bottom:5px;}
-  .card-rsi-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;text-align:right;margin-bottom:4px;}
-
-  /* 카드 하단: 현재가 / 등락률 / 신호 */
-  .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
-  .card-stat{}
-  .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
-  .card-stat-value{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--text-bright);}
-  .card-stat-value.up{color:var(--red);}
-  .card-stat-value.down{color:#4fc3f7;}
-
-  /* RSI 바 (카드 중간) */
-  .card-rsi-bar-wrap{margin-top:8px;}
+  .card-rsi-bar-wrap{margin-bottom:8px;}
   .rsi-bar-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
   .rsi-fill{height:100%;border-radius:99px;}
   .rsi-below20{background:#ff1744;}
   .rsi-below30{background:#ff6d00;}
   .rsi-below40{background:#ffd600;}
   .rsi-above40{background:#4caf50;}
+  .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
+  .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
+  .card-stat-value{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--text-bright);}
+  .card-stat-value.up{color:var(--red);}
+  .card-stat-value.down{color:#4fc3f7;}
 
-  /* 신호 배지 */
   .signal-badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;white-space:nowrap;display:inline-block;}
   .signal-strong{background:rgba(255,23,68,0.15);color:#ff5252;border:1px solid rgba(255,23,68,0.3);}
   .signal-consider{background:rgba(255,214,0,0.15);color:#ffd600;border:1px solid rgba(255,214,0,0.3);}
   .signal-watch{background:rgba(100,116,139,0.15);color:var(--text-dim);border:1px solid var(--border);}
 
-  /* 빈 상태 */
-  .empty-state{text-align:center;padding:60px 20px;}
-  .empty-icon{font-size:40px;margin-bottom:12px;opacity:0.5;}
-  .empty-title{font-size:16px;font-weight:600;color:var(--text-dim);margin-bottom:8px;}
-  .empty-desc{font-size:13px;color:var(--text-dim);opacity:0.6;line-height:1.7;}
-
-  /* 스피너 */
-  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-
-  /* ── 데스크탑 테이블 ── */
+  /* 데스크탑 테이블 */
   table{width:100%;border-collapse:collapse;}
   th{padding:12px 16px;text-align:left;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#90a4ae;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;font-weight:600;}
   th:hover{color:var(--accent);}
@@ -145,7 +124,16 @@
   .rsi-val{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px;min-width:44px;}
   .rsi-bar-desktop{flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;min-width:80px;}
 
-  /* ── 반응형 ── */
+  /* 빈 상태 */
+  .empty-state{text-align:center;padding:60px 20px;}
+  .empty-icon{font-size:40px;margin-bottom:12px;opacity:0.5;}
+  .empty-title{font-size:16px;font-weight:600;color:var(--text-dim);margin-bottom:8px;}
+  .empty-desc{font-size:13px;color:var(--text-dim);opacity:0.6;line-height:1.7;}
+
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* 반응형 */
   @media(min-width:768px){
     .wrap{padding:24px;}
     h1{font-size:22px;}
@@ -175,7 +163,6 @@
 <body>
 <div class="wrap">
 
-  <!-- 헤더 -->
   <header>
     <div class="logo">
       <div class="logo-icon">RSI</div>
@@ -187,7 +174,6 @@
     <div class="timestamp" id="timestamp">업데이트: -</div>
   </header>
 
-  <!-- 통계 카드 -->
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-label">스캔 종목</div>
@@ -211,20 +197,19 @@
     </div>
   </div>
 
-  <!-- 컨트롤 -->
   <div class="control-panel">
     <div class="btn-row">
-      <button class="btn btn-primary" id="btn-quick" onclick="quickScan()">⚡ 빠른 스캔</button>
-      <button class="btn btn-secondary" id="btn-full" onclick="fullScan()">🔍 전체 스캔</button>
+      <button class="btn btn-primary" id="btn-quick" onclick="quickScan()">⚡ 스캔 실행</button>
+      <button class="btn btn-secondary" id="btn-refresh" onclick="loadCachedResults()">🔄 결과 새로고침</button>
     </div>
     <div class="filter-grid">
       <div class="filter-item">
         <span class="filter-label">RSI 기준</span>
-        <input type="number" id="rsi-threshold" value="40" min="1" max="100" onchange="filterTable()">
+        <input type="number" id="rsi-threshold" value="40" min="1" max="100" onchange="saveSettings();filterTable()">
       </div>
       <div class="filter-item">
         <span class="filter-label">시장</span>
-        <select id="market-filter" onchange="filterTable()">
+        <select id="market-filter" onchange="saveSettings();filterTable()">
           <option value="ALL">전체</option>
           <option value="KOSPI">KOSPI</option>
           <option value="KOSDAQ">KOSDAQ</option>
@@ -232,7 +217,7 @@
       </div>
       <div class="filter-item">
         <span class="filter-label">정렬</span>
-        <select id="sort-by" onchange="sortAndRender()">
+        <select id="sort-by" onchange="saveSettings();sortAndRender()">
           <option value="rsi">RSI순</option>
           <option value="change">등락률</option>
           <option value="name">종목명</option>
@@ -241,7 +226,6 @@
     </div>
   </div>
 
-  <!-- 진행바 -->
   <div class="progress-container" id="progress-container">
     <div class="progress-header">
       <span class="progress-text" id="progress-text">스캔 준비 중...</span>
@@ -252,45 +236,41 @@
     </div>
   </div>
 
-  <!-- 공지 -->
   <div class="notice">
-    💡 빠른스캔: 주요 35종목 (30초~1분)<br>
-    전체스캔: 코스피/코스닥 전종목 · 데이터: Yahoo Finance (전일종가)
+    💡 스캔 실행: 200개 주요 종목 분석 (약 1~2분)<br>
+    매일 오전 8시 자동 갱신 · 데이터: Yahoo Finance (전일종가)
   </div>
 
-  <!-- 결과 테이블 -->
   <div class="table-container">
     <div class="table-header">
-      <!-- 공통 상단: 제목 + (PC에서는 탭+검색) -->
       <div class="th-row1">
         <div class="table-title">
           RSI ≤ <span id="threshold-display">40</span>&nbsp;종목
           <span class="badge" id="result-count">0</span>
         </div>
-        <!-- PC 전용 -->
+        <!-- PC 전용 탭+검색 -->
         <div class="desktop-table" style="display:flex;align-items:center;gap:12px;">
           <div class="tabs">
-            <div class="tab active" onclick="setView('rsi40',this)">RSI ≤ 40</div>
-            <div class="tab" onclick="setView('all',this)">전체</div>
+            <div class="tab active" id="tab-filtered-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
+            <div class="tab" id="tab-all-d" onclick="setView('all',this)">전체</div>
           </div>
-          <input class="search-input" style="width:180px;" type="text" placeholder="종목명 검색..." oninput="filterTable()" id="search-desktop">
+          <input class="search-input" style="width:180px;" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-desktop">
         </div>
       </div>
-      <!-- 모바일 전용: 탭 + 검색 한 줄 -->
+      <!-- 모바일 전용 탭+검색 -->
       <div class="th-row2">
         <div class="tabs">
-          <div class="tab active" onclick="setView('rsi40',this)">RSI ≤ 40</div>
-          <div class="tab" onclick="setView('all',this)">전체</div>
+          <div class="tab active" id="tab-filtered-m" onclick="setView('rsi40',this)">RSI ≤ 40</div>
+          <div class="tab" id="tab-all-m" onclick="setView('all',this)">전체</div>
         </div>
-        <input class="search-input" type="text" placeholder="종목명 검색..." oninput="filterTable()" id="search-mobile">
+        <input class="search-input" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-mobile">
       </div>
     </div>
-
     <div id="table-body">
       <div class="empty-state">
         <div class="empty-icon">📊</div>
         <div class="empty-title">스캔을 시작하세요</div>
-        <div class="empty-desc">'빠른 스캔' 버튼을 눌러<br>RSI 과매도 종목을 찾아보세요</div>
+        <div class="empty-desc">'스캔 실행' 버튼을 눌러<br>RSI 과매도 종목을 찾아보세요</div>
       </div>
     </div>
   </div>
@@ -299,21 +279,69 @@
 <script>
   let allData=[], currentView='rsi40', scanInterval=null;
 
+  // ── 설정 저장/불러오기 (localStorage) ──
+  const SETTINGS_KEY = 'rsi_screener_settings';
+
+  function saveSettings() {
+    try {
+      const s = {
+        threshold: document.getElementById('rsi-threshold').value,
+        market: document.getElementById('market-filter').value,
+        sortBy: document.getElementById('sort-by').value,
+        view: currentView,
+        searchMobile: document.getElementById('search-mobile').value,
+        searchDesktop: document.getElementById('search-desktop').value,
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    } catch(e){}
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.threshold) document.getElementById('rsi-threshold').value = s.threshold;
+      if (s.market) document.getElementById('market-filter').value = s.market;
+      if (s.sortBy) document.getElementById('sort-by').value = s.sortBy;
+      if (s.searchMobile) document.getElementById('search-mobile').value = s.searchMobile;
+      if (s.searchDesktop) document.getElementById('search-desktop').value = s.searchDesktop;
+      if (s.view && s.view !== 'rsi40') {
+        currentView = s.view;
+        // 탭 active 상태 복원
+        ['tab-filtered-m','tab-filtered-d'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('active');
+        });
+        ['tab-all-m','tab-all-d'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('active');
+        });
+      }
+    } catch(e){}
+  }
+
   function setView(view, el) {
     currentView = view;
-    document.querySelectorAll('.tab').forEach(t => {
-      t.classList.toggle('active', t.textContent.trim()===el.textContent.trim());
+    // 모바일/PC 탭 동기화
+    ['tab-filtered-m','tab-filtered-d'].forEach(id => {
+      const t = document.getElementById(id);
+      if (t) t.classList.toggle('active', view==='rsi40');
     });
+    ['tab-all-m','tab-all-d'].forEach(id => {
+      const t = document.getElementById(id);
+      if (t) t.classList.toggle('active', view==='all');
+    });
+    saveSettings();
     filterTable();
   }
 
   function setScanUI(on) {
     const qb = document.getElementById('btn-quick');
-    const fb = document.getElementById('btn-full');
+    const rb = document.getElementById('btn-refresh');
     qb.disabled = on;
-    fb.disabled = on;
-    qb.innerHTML = on ? '<span class="spinner"></span> 스캔 중...' : '⚡ 빠른 스캔';
-    fb.innerHTML = on ? '🔍 전체 스캔' : '🔍 전체 스캔';
+    rb.disabled = on;
+    qb.innerHTML = on ? '<span class="spinner"></span> 스캔 중...' : '⚡ 스캔 실행';
     document.getElementById('progress-container').classList.toggle('active', on);
   }
 
@@ -322,18 +350,24 @@
     try {
       const r = await fetch('/api/quick-scan');
       const d = await r.json();
-      if (d.status==='scanning') { document.getElementById('progress-text').textContent = d.message||'스캔 중...'; poll(); }
+      if (d.status==='scanning') {
+        document.getElementById('progress-text').textContent = d.message||'스캔 중...';
+        poll();
+      }
     } catch(e) { alert('오류: '+e.message); setScanUI(false); }
   }
 
-  async function fullScan() {
-    if (!confirm('전체 스캔은 시간이 소요됩니다. 진행할까요?')) return;
-    setScanUI(true);
+  async function loadCachedResults() {
     try {
-      const r = await fetch('/api/scan');
+      const r = await fetch('/api/results');
       const d = await r.json();
-      if (d.status==='scanning') { document.getElementById('progress-text').textContent = d.message||'스캔 중...'; poll(); }
-    } catch(e) { alert('오류: '+e.message); setScanUI(false); }
+      if (d.all_data && d.all_data.length > 0) {
+        allData = d.all_data;
+        renderResults(d.timestamp);
+      } else {
+        alert('저장된 결과가 없습니다. 스캔을 실행해주세요.');
+      }
+    } catch(e) { alert('오류: '+e.message); }
   }
 
   function poll() {
@@ -351,29 +385,34 @@
           const res = await fetch('/api/results');
           const data = await res.json();
           allData = data.all_data || data.data || [];
-          renderResults();
+          renderResults(data.timestamp);
           setScanUI(false);
         }
       } catch(e){}
     }, 500);
   }
 
+  // ── 초기 로드 ──
   (async function init() {
+    loadSettings(); // 저장된 설정 먼저 복원
     try {
       const r = await fetch('/api/status');
       const s = await r.json();
-      if (s.status==='scanning') { setScanUI(true); poll(); }
-      else if (s.status==='done' && s.count>0) {
+      if (s.status==='scanning') {
+        setScanUI(true); poll();
+      } else if (s.status==='done' && s.count>0) {
+        // 캐시된 결과 자동 표시
         const res = await fetch('/api/results');
         const data = await res.json();
         allData = data.all_data || data.data || [];
-        renderResults();
+        renderResults(data.timestamp);
       }
     } catch(e){}
   })();
 
   function getSearch() {
-    return (document.getElementById('search-mobile').value || document.getElementById('search-desktop').value || '').toLowerCase();
+    return (document.getElementById('search-mobile').value ||
+            document.getElementById('search-desktop').value || '').toLowerCase();
   }
 
   function filterTable() {
@@ -407,29 +446,28 @@
     document.getElementById('stat-filtered').textContent = allData.filter(s=>s.rsi<=thr).length||'-';
   }
 
-  function renderResults() {
-    document.getElementById('timestamp').textContent = '업데이트: '+new Date().toLocaleString('ko-KR');
+  function renderResults(ts) {
+    if (ts) document.getElementById('timestamp').textContent = '업데이트: '+ts;
+    else document.getElementById('timestamp').textContent = '업데이트: '+new Date().toLocaleString('ko-KR');
     filterTable();
   }
 
-  function rc(r) { return r<=20?'rsi-below20':r<=30?'rsi-below30':r<=40?'rsi-below40':'rsi-above40'; }
-  function rcolor(r) { return r<=30?'var(--red)':r<=40?'var(--yellow)':'var(--text)'; }
-  function sig(r) {
-    if (r<=30) return '<span class="signal-badge signal-strong">강한 매수</span>';
-    if (r<=40) return '<span class="signal-badge signal-consider">매수 고려</span>';
+  function rc(r){return r<=20?'rsi-below20':r<=30?'rsi-below30':r<=40?'rsi-below40':'rsi-above40';}
+  function rcolor(r){return r<=30?'var(--red)':r<=40?'var(--yellow)':'var(--text)';}
+  function sig(r){
+    if(r<=30) return '<span class="signal-badge signal-strong">강한 매수</span>';
+    if(r<=40) return '<span class="signal-badge signal-consider">매수 고려</span>';
     return '<span class="signal-badge signal-watch">관망</span>';
   }
 
   function renderTable(data) {
     const el = document.getElementById('table-body');
     document.getElementById('result-count').textContent = data.length;
-
     if (!data.length) {
       el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">해당 조건의 종목이 없습니다</div><div class="empty-desc">RSI 기준값이나 시장 필터를 조정해보세요</div></div>`;
       return;
     }
 
-    // 모바일 카드
     const cards = `<div class="mobile-cards">${data.map((s,i)=>`
       <div class="stock-card">
         <div class="card-top">
@@ -452,22 +490,21 @@
         </div>
         <div style="height:8px;"></div>
         <div class="card-bottom">
-          <div class="card-stat">
+          <div>
             <div class="card-stat-label">현재가</div>
             <div class="card-stat-value">${Number(s.price).toLocaleString()}원</div>
           </div>
-          <div class="card-stat" style="text-align:center;">
+          <div style="text-align:center;">
             <div class="card-stat-label">시장</div>
-            <span class="market-badge market-${s.market.toLowerCase()}" style="font-size:11px;">${s.market}</span>
+            <span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span>
           </div>
-          <div class="card-stat" style="text-align:right;">
+          <div style="text-align:right;">
             <div class="card-stat-label">등락률</div>
             <div class="card-stat-value ${s.change_pct>=0?'up':'down'}">${s.change_pct>=0?'+':''}${s.change_pct}%</div>
           </div>
         </div>
       </div>`).join('')}</div>`;
 
-    // 데스크탑 테이블
     const table = `<div class="desktop-table"><table>
       <thead><tr><th>#</th><th>종목</th><th>시장</th><th>현재가</th><th>등락률</th><th>RSI (14)</th><th>신호</th></tr></thead>
       <tbody>${data.map((s,i)=>`
