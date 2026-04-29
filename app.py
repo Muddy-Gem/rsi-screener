@@ -9,6 +9,7 @@ import json
 import os
 import concurrent.futures
 from datetime import datetime
+import pytz
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
@@ -319,7 +320,7 @@ def run_scan(stocks_df, requester_ip):
     cache['all_data'] = results
     cache['data'] = [r for r in results if r['rsi'] <= 40]
     cache['status'] = 'done'
-    cache['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cache['timestamp'] = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
     cache['progress'] = cache['total']
 
     save_cache()
