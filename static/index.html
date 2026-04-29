@@ -661,10 +661,10 @@
     'MA60위': '현재가 > 60일 이동평균\n중기 상승 추세 유지',
     '볼린저하단': '볼린저밴드 하단 20% 이내\n통계적 저점. 반등 가능성 높음',
     'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
-    'MA20↑': '현재가 > 20일선\n단기 상승 추세',
-    'MA20~': '20일선 ±3% 이내\n지지선 테스트 중',
-    'BB하단': '볼린저밴드 하단 근처\n통계적 저점 구간',
-    'MACD✓': 'MACD 골든크로스\n상승 전환 신호',
+    'MA20위': '현재가 > 20일 이동평균\n단기 상승 추세 유지 중',
+    'MA20근접': '현재가가 20일선 ±3% 이내\n지지선 근처에서 눌림목',
+    '볼린저하단': '볼린저밴드 하단 20% 이내\n통계적 저점. 반등 가능성 높음',
+    'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
   };
 
   function indTags(s){
@@ -686,10 +686,10 @@
 
   function indTagsDesktop(s){
     const tags = [];
-    if (s.above_ma20) tags.push(['ind-blue','MA20↑']);
-    else if (s.near_ma20) tags.push(['ind-blue','MA20~']);
-    if (s.near_bb_lower) tags.push(['ind-purple','BB하단']);
-    if (s.macd_golden) tags.push(['ind-green','MACD✓']);
+    if (s.above_ma20) tags.push(['ind-blue','MA20위']);
+    else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
+    if (s.near_bb_lower) tags.push(['ind-purple','볼린저하단']);
+    if (s.macd_golden) tags.push(['ind-green','MACD골든']);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
         <span class="ind-tag ${cls}">${txt}</span>
