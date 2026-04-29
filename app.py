@@ -187,10 +187,12 @@ def fetch_stock_data(code, period=14):
         if hist.empty:
             stock = yf.Ticker(f"{code}.KQ")
             hist = stock.history(period="1y")
-        if hist.empty or len(hist) < 60:
+        # 최소 15개(RSI용)만 있으면 처리, 부족한 지표는 기본값 사용
+        if hist.empty or len(hist) < 15:
             return None
 
         close = hist['Close']
+        n = len(close)
         price = round(float(close.iloc[-1]), 0)
         prev  = round(float(close.iloc[-2]), 0)
         change = round((price - prev) / prev * 100, 2)
@@ -199,28 +201,35 @@ def fetch_stock_data(code, period=14):
         rsi_val = round(float(ta.momentum.RSIIndicator(close, window=14).rsi().iloc[-1]), 2)
 
         # ── 이동평균선 ──
-        ma20  = round(float(close.rolling(20).mean().iloc[-1]), 0)
-        ma60  = round(float(close.rolling(60).mean().iloc[-1]), 0)
+        ma20 = round(float(close.rolling(min(20,n)).mean().iloc[-1]), 0) if n >= 20 else price
+        ma60 = round(float(close.rolling(min(60,n)).mean().iloc[-1]), 0) if n >= 60 else price
         above_ma20 = price >= ma20
-        above_ma60 = price >= ma60
-        # 20일선 근접: ±3% 이내
-        near_ma20 = abs(price - ma20) / ma20 <= 0.03
+        above_ma60 = price >= ma60 if n >= 60 else False
+        near_ma20 = abs(price - ma20) / ma20 <= 0.03 if n >= 20 else False
 
         # ── 볼린저밴드 (20일, 2σ) ──
-        bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
-        bb_upper = round(float(bb.bollinger_hband().iloc[-1]), 0)
-        bb_lower = round(float(bb.bollinger_lband().iloc[-1]), 0)
-        bb_mid   = round(float(bb.bollinger_mavg().iloc[-1]), 0)
-        bb_pct   = round(float(bb.bollinger_pband().iloc[-1]) * 100, 1)  # 0~100%
-        near_bb_lower = bb_pct <= 20  # 하단 20% 이내
+        if n >= 20:
+            bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
+            bb_upper = round(float(bb.bollinger_hband().iloc[-1]), 0)
+            bb_lower = round(float(bb.bollinger_lband().iloc[-1]), 0)
+            bb_mid   = round(float(bb.bollinger_mavg().iloc[-1]), 0)
+            bb_pct   = round(float(bb.bollinger_pband().iloc[-1]) * 100, 1)
+        else:
+            bb_upper = bb_lower = bb_mid = price
+            bb_pct = 50.0
+        near_bb_lower = bb_pct <= 20
 
-        # ── MACD ──
-        macd_obj  = ta.trend.MACD(close, window_slow=26, window_fast=12, window_sign=9)
-        macd_val  = round(float(macd_obj.macd().iloc[-1]), 2)
-        macd_sig  = round(float(macd_obj.macd_signal().iloc[-1]), 2)
-        macd_prev = round(float(macd_obj.macd().iloc[-2]), 2)
-        macd_sig_prev = round(float(macd_obj.macd_signal().iloc[-2]), 2)
-        macd_golden = (macd_prev < macd_sig_prev) and (macd_val >= macd_sig)  # 골든크로스
+        # ── MACD (최소 27개 필요) ──
+        if n >= 27:
+            macd_obj  = ta.trend.MACD(close, window_slow=26, window_fast=12, window_sign=9)
+            macd_val  = round(float(macd_obj.macd().iloc[-1]), 2)
+            macd_sig  = round(float(macd_obj.macd_signal().iloc[-1]), 2)
+            macd_prev = round(float(macd_obj.macd().iloc[-2]), 2)
+            macd_sig_prev = round(float(macd_obj.macd_signal().iloc[-2]), 2)
+            macd_golden = (macd_prev < macd_sig_prev) and (macd_val >= macd_sig)
+        else:
+            macd_val = macd_sig = 0.0
+            macd_golden = False
 
         # ── 52주 고저 ──
         high_52 = round(float(close.tail(252).max()), 0)
