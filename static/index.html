@@ -339,85 +339,103 @@
         <span style="font-size:16px;">📖</span>
         <div>
           <div class="guide-title">지표 설명 보기</div>
-          <div class="guide-subtitle">각 지표가 무엇을 의미하는지 확인하세요</div>
+          <div class="guide-subtitle">각 태그가 무엇을 의미하는지 확인하세요</div>
         </div>
       </div>
       <span class="guide-arrow" id="guide-arrow">▼</span>
     </div>
     <div class="guide-body" id="guide-body">
       <div class="guide-grid">
+
+        <!-- RSI -->
         <div class="guide-item g-rsi">
-          <div class="guide-item-title">
-            <span class="ind-tag ind-yellow guide-item-tag">RSI과매도</span>
-            RSI (상대강도지수)
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="ind-tag ind-yellow" style="font-size:11px;">RSI과매도</span>
+            <span class="ind-tag ind-red" style="font-size:11px;">RSI극과매도</span>
           </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">RSI (상대강도지수)</div>
           <div class="guide-item-desc">
-            14일간 상승/하락 강도 비교.<br>
-            <b style="color:var(--yellow)">≤ 40</b>: 과매도 → 매수 고려<br>
-            <b style="color:var(--red)">≤ 30</b>: 극과매도 → 강한 매수 신호<br>
-            전일종가 기준이라 당일 변동 미반영
+            14일간 상승/하락 강도 비교<br>
+            <span style="color:var(--yellow);">RSI과매도</span> ≤40 → 매수 고려<br>
+            <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호<br>
+            <span style="opacity:0.6;font-size:10px;">전일종가 기준, 당일 변동 미반영</span>
           </div>
         </div>
+
+        <!-- MA -->
         <div class="guide-item g-ma">
-          <div class="guide-item-title">
-            <span class="ind-tag ind-blue guide-item-tag">MA20위</span>
-            이동평균선 (MA)
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="ind-tag ind-blue" style="font-size:11px;">MA20위</span>
+            <span class="ind-tag ind-blue" style="font-size:11px;">MA20근접</span>
+            <span class="ind-tag ind-dim" style="font-size:11px;">MA20아래</span>
           </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">이동평균선 (MA)</div>
           <div class="guide-item-desc">
-            20일/60일 종가 평균선.<br>
-            <b style="color:var(--accent)">MA20위</b>: 단기 상승 추세 유지<br>
-            <b style="color:var(--accent)">MA20근접</b>: ±3% 이내, 지지선 테스트 중<br>
-            MA20아래: 단기 하락 추세
+            20일/60일 종가 평균선<br>
+            <span style="color:var(--accent);">MA20위</span> 단기 상승 추세 유지<br>
+            <span style="color:var(--accent);">MA20근접</span> ±3% 이내, 지지선 테스트<br>
+            <span style="color:var(--text-dim);">MA20아래</span> 단기 하락 추세
           </div>
         </div>
+
+        <!-- BB -->
         <div class="guide-item g-bb">
-          <div class="guide-item-title">
-            <span class="ind-tag ind-purple guide-item-tag">볼린저하단</span>
-            볼린저밴드 (BB)
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span class="ind-tag ind-purple" style="font-size:11px;">볼린저하단</span>
           </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">볼린저밴드 (BB)</div>
           <div class="guide-item-desc">
-            20일 이동평균 ± 표준편차 2배.<br>
-            <b style="color:var(--purple)">BB하단</b>: 하단 밴드 20% 이내<br>
-            → 통계적 저점 구간. 반등 가능성 ↑<br>
-            BB%는 밴드 내 현재 위치 (0%=하단)
+            20일 이평 ± 표준편차 2배 구간<br>
+            <span style="color:var(--purple);">볼린저하단</span> 하단 20% 이내<br>
+            통계적 저점 → 반등 가능성 ↑<br>
+            <span style="opacity:0.6;font-size:10px;">BB%: 밴드 내 위치 (0%=하단, 100%=상단)</span>
           </div>
         </div>
+
+        <!-- MACD -->
         <div class="guide-item g-macd">
-          <div class="guide-item-title">
-            <span class="ind-tag ind-green guide-item-tag">MACD골든</span>
-            MACD
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span class="ind-tag ind-green" style="font-size:11px;">MACD골든</span>
           </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">MACD</div>
           <div class="guide-item-desc">
-            12일 - 26일 지수이동평균 차이.<br>
-            <b style="color:var(--green)">MACD골든</b>: MACD선이 시그널선을 상향 돌파<br>
-            → 단기 상승 전환 신호<br>
-            전일종가 기준으로 안정적인 지표
+            12일 - 26일 지수이동평균 차이<br>
+            <span style="color:var(--green);">MACD골든</span> MACD선이 시그널선 상향 돌파<br>
+            단기 상승 전환 신호<br>
+            <span style="opacity:0.6;font-size:10px;">전일종가 기준으로 안정적인 지표</span>
           </div>
         </div>
+
+        <!-- 52주 -->
         <div class="guide-item g-52">
-          <div class="guide-item-title">
-            <span style="font-size:14px;">📊</span>
-            52주 고저 위치
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span class="ind-tag" style="font-size:11px;background:rgba(79,195,247,0.12);color:#1a6b85;border:1px solid rgba(79,195,247,0.3);">저+%</span>
+            <span class="ind-tag" style="font-size:11px;background:rgba(100,116,139,0.12);color:var(--text-dim);border:1px solid var(--border);">고%</span>
           </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">52주 고저 위치</div>
           <div class="guide-item-desc">
-            1년간 최고/최저가 대비 현재 위치.<br>
-            <b style="color:#4fc3f7">저+%</b>: 52주 저점 대비 상승률<br>
-            <b style="color:var(--text-dim)">고%</b>: 52주 고점 대비 하락률<br>
-            저점 근처 + RSI낮음 = 바닥권 신호
+            1년간 최고/최저가 대비 현재 위치<br>
+            <span style="color:#4fc3f7;">저+%</span> 52주 저점 대비 상승률<br>
+            <span style="color:var(--text-dim);">고%</span> 52주 고점 대비 하락률<br>
+            <span style="opacity:0.6;font-size:10px;">저점 근처 + RSI낮음 = 바닥권 신호</span>
           </div>
         </div>
+
+        <!-- 종합점수 -->
         <div class="guide-item g-score">
-          <div class="guide-item-title">
-            <span style="font-size:14px;">⭐</span>
-            종합 점수 (0~5점)
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="ind-tag signal-good" style="font-size:11px;">매수유망</span>
+            <span class="ind-tag signal-top" style="font-size:11px;">강력매수</span>
           </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~5점)</div>
           <div class="guide-item-desc">
-            RSI≤40 +1 / RSI≤30 추가+1<br>
-            MA20위·근접 +1 / 볼린저하단 +1<br>
-            MACD골든 +1<br>
-            <b style="color:var(--green)">3점↑: 매수유망</b> / <b style="color:var(--green)">4점↑: 강력매수</b>
+            RSI≤40 +1점 / RSI≤30 추가 +1점<br>
+            MA20위·근접 +1점 / 볼린저하단 +1점<br>
+            MACD골든 +1점<br>
+            <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">4점↑ 강력매수</span>
           </div>
         </div>
+
       </div>
     </div>
   </div>
