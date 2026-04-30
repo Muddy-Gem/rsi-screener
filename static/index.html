@@ -79,38 +79,44 @@
   .mobile-cards{display:block;}
   .desktop-table{display:none;}
 
-  .stock-card{padding:14px;border-bottom:1px solid rgba(42,63,95,0.6);position:relative;}
+  .stock-card{padding:16px;border-bottom:1px solid rgba(42,63,95,0.6);position:relative;}
   .stock-card:last-child{border-bottom:none;}
+  .stock-card:active{background:rgba(255,255,255,0.02);}
 
   /* 강력매수 카드 하이라이트 */
-  .stock-card.highlight{border-left:3px solid var(--green);background:rgba(0,230,118,0.03);}
-  .stock-card.highlight-strong{border-left:3px solid var(--red);}
+  .stock-card.highlight{border-left:4px solid var(--green);background:rgba(0,230,118,0.03);}
+  .stock-card.highlight-strong{border-left:4px solid var(--red);background:rgba(255,82,82,0.03);}
 
-  .card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+  /* 헤더: 종목명 + RSI */
+  .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .card-left{flex:1;min-width:0;}
-  .card-rank{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:2px;}
-  .card-name{font-size:16px;font-weight:700;color:var(--text-bright);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
-  .card-code{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7896b0;}
+  .card-rank{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:3px;letter-spacing:0.5px;}
+  .card-name{font-size:19px;font-weight:700;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+  .card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px;}
+  .card-code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7896b0;}
   .market-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;}
   .market-kospi{background:rgba(0,212,255,0.12);color:var(--accent);}
   .market-kosdaq{background:rgba(255,107,53,0.12);color:var(--accent2);}
-  .card-right{flex-shrink:0;padding-left:12px;text-align:right;}
-  .card-rsi-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
-  .card-rsi-num{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:700;line-height:1;margin-bottom:5px;}
+
+  /* RSI 숫자 - 우측 크게 */
+  .card-right{flex-shrink:0;padding-left:14px;text-align:right;}
+  .card-rsi-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:1px;}
+  .card-rsi-num{font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:700;line-height:1;}
 
   /* RSI 바 */
   .card-rsi-bar-wrap{margin-bottom:10px;}
-  .rsi-bar-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
+  .rsi-bar-track{height:4px;background:var(--border);border-radius:99px;overflow:hidden;}
   .rsi-fill{height:100%;border-radius:99px;}
   .rsi-below20{background:#ff1744;}
   .rsi-below30{background:#ff6d00;}
   .rsi-below40{background:#ffd600;}
   .rsi-above40{background:#4caf50;}
 
+  /* 태그 영역 */
+  .indicators{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+
   /* 지표 태그 */
-  .indicators{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
-  .ind-tag{padding:3px 8px;border-radius:5px;font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;white-space:nowrap;}
+  .ind-tag{padding:4px 9px;border-radius:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;white-space:nowrap;}
   .ind-green{background:rgba(0,230,118,0.12);color:var(--green);border:1px solid rgba(0,230,118,0.25);}
   .ind-red{background:rgba(255,23,68,0.12);color:#ff5252;border:1px solid rgba(255,23,68,0.25);}
   .ind-yellow{background:rgba(255,214,0,0.12);color:var(--yellow);border:1px solid rgba(255,214,0,0.25);}
@@ -146,9 +152,17 @@
     font-weight: 600;
   }
 
-  /* 카드 하단 수치 */
-  .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
-  .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
+  /* 카드 하단: 점수 + 현재가/등락률 */
+  .card-footer{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:8px;padding:10px 12px;}
+  .card-score-wrap{display:flex;flex-direction:column;gap:4px;}
+  .card-score-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .card-score-dots{display:flex;gap:4px;align-items:center;}
+  .score-dot{width:9px;height:9px;border-radius:50%;}
+  .score-dot.on{background:var(--green);box-shadow:0 0 4px rgba(0,230,118,0.5);}
+  .score-dot.off{background:rgba(100,116,139,0.25);}
+  .card-stats{display:flex;gap:16px;align-items:center;}
+  .card-stat{text-align:right;}
+  .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
   .card-stat-value{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--text-bright);}
   .card-stat-value.up{color:var(--red);}
   .card-stat-value.down{color:#4fc3f7;}
@@ -807,14 +821,15 @@
     }
 
     // 모바일 카드
-    const cards = `<div class="mobile-cards">${data.map((s,i)=>`
+    const cards = `<div class="mobile-cards">${data.map((s,i)=>{
+      const dots = Array.from({length:5},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
+      return `
       <div class="stock-card ${s.score>=4?'highlight':s.rsi<=30?'highlight-strong':''}">
         <div class="card-top">
           <div class="card-left">
-            <div class="card-rank">#${i+1} · 종합점수 ${s.score}/5</div>
+            <div class="card-rank">#${i+1} · ${s.code} · <span style="font-family:'IBM Plex Mono',monospace;">${s.market}</span></div>
             <div class="card-name">${s.name}</div>
             <div class="card-meta">
-              <span class="card-code">${s.code}</span>
               <span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span>
               ${sigHTML(s.signal)}
             </div>
@@ -830,21 +845,24 @@
         <div class="indicators">${indTags(s)}</div>
         ${week52Bar(s)}
         <div style="height:8px;"></div>
-        <div class="card-bottom">
-          <div>
-            <div class="card-stat-label">현재가</div>
-            <div class="card-stat-value">${Number(s.price).toLocaleString()}원</div>
+        <div class="card-footer">
+          <div class="card-score-wrap">
+            <div class="card-score-label">종합점수</div>
+            <div class="card-score-dots">${dots}<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/5</span></div>
           </div>
-          <div style="text-align:center;">
-            <div class="card-stat-label">MA20</div>
-            <div class="card-stat-value" style="font-size:12px;">${Number(s.ma20).toLocaleString()}</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="card-stat-label">등락률</div>
-            <div class="card-stat-value ${s.change_pct>=0?'up':'down'}">${s.change_pct>=0?'+':''}${s.change_pct}%</div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <div class="card-stat-label">현재가</div>
+              <div class="card-stat-value">${Number(s.price).toLocaleString()}원</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">등락률</div>
+              <div class="card-stat-value ${s.change_pct>=0?'up':'down'}">${s.change_pct>=0?'+':''}${s.change_pct}%</div>
+            </div>
           </div>
         </div>
-      </div>`).join('')}</div>`;
+      </div>`;
+    }).join('')}</div>`;
 
     // 데스크탑 테이블
     const table = `<div class="desktop-table"><table>
