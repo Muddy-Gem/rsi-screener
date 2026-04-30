@@ -576,7 +576,7 @@
   // ── 신호 이력 저장 (스캔 완료 시 강력매수/매수유망 종목 기록) ──
   function saveHistory(data){
     const today = new Date().toLocaleDateString('ko-KR');
-    const notable = data.filter(s => s.score >= 3);
+    const notable = data.filter(s => ['매수유망','강력매수','강한매수'].includes(s.signal));
     notable.forEach(s => {
       // 같은 날 같은 종목 중복 방지
       const exists = signalHistory.some(h => h.date === today && h.code === s.code);
@@ -767,7 +767,7 @@
       if (!(mkt==='ALL'||s.market===mkt)) return false;
       if (!(s.name.toLowerCase().includes(q)||s.code.includes(q))) return false;
       if (currentView==='all') return true;
-      if (currentView==='promising') return s.score>=3;
+      if (currentView==='promising') return ['매수유망','강력매수','강한매수'].includes(s.signal);
       if (currentView==='favorites') return favorites.has(s.code);
       return s.rsi <= 40; // rsi40 탭은 항상 40 고정
     });
@@ -790,7 +790,7 @@
     document.getElementById('stat-total').textContent = allData.length||'-';
     document.getElementById('stat-strong').textContent = allData.filter(s=>s.rsi<=30).length||'-';
     document.getElementById('stat-consider').textContent = allData.filter(s=>s.rsi<=40).length||'-';
-    document.getElementById('stat-promising').textContent = allData.filter(s=>s.score>=3).length||'-';
+    document.getElementById('stat-promising').textContent = allData.filter(s=>['매수유망','강력매수','강한매수'].includes(s.signal)).length||'-';
   }
 
   function renderResults(ts){
