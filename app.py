@@ -173,7 +173,7 @@ CACHE_FILE = 'scan_cache.json'
 cache = {
     'data': [], 'all_data': [], 'timestamp': None,
     'status': 'idle', 'progress': 0, 'total': 0,
-    'error': None, 'kospi_market_up': None  # 코스피 MA60 우상향 여부
+    'error': None, 'kospi_market_up': None, 'kosdaq_market_up': None
 }
 
 scan_lock = threading.Lock()
@@ -197,11 +197,11 @@ def can_scan(ip):
 def get_stocks():
     return pd.DataFrame(STOCKS)
 
-def check_kospi_market():
-    """코스피 MA60 우상향 여부 확인 (t > t-5 > t-10)"""
+def check_market_trend(ticker_symbol):
+    """지수 MA60 우상향 여부 확인 (t > t-5 > t-10)"""
     try:
-        kospi = yf.Ticker('^KS11')
-        hist = kospi.history(period='6mo', timeout=10)
+        ticker = yf.Ticker(ticker_symbol)
+        hist = ticker.history(period='6mo', timeout=10)
         if hist.empty or len(hist) < 70:
             return True  # 데이터 없으면 중립(True)으로 처리
         close = hist['Close']
@@ -212,6 +212,12 @@ def check_kospi_market():
         return (ma60_now > ma60_5d) and (ma60_5d > ma60_10d)
     except:
         return True  # 오류 시 중립(True)으로 처리
+
+def check_kospi_market():
+    return check_market_trend('^KS11')
+
+def check_kosdaq_market():
+    return check_market_trend('^KQ11')
 
 def fetch_stock_data(code, market='KOSPI', period=14):
     """종목 데이터 + RSI + 이동평균 + 볼린저밴드 + 52주 고저 계산
@@ -449,7 +455,13 @@ def fetch_stock_data(code, market='KOSPI', period=14):
 def save_cache():
     try:
         with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump({'data': cache['data'], 'all_data': cache['all_data'], 'timestamp': cache['timestamp']}, f, ensure_ascii=False)
+            json.dump({
+                'data': cache['data'],
+                'all_data': cache['all_data'],
+                'timestamp': cache['timestamp'],
+                'kospi_market_up': cache['kospi_market_up'],
+                'kosdaq_market_up': cache['kosdaq_market_up'],
+            }, f, ensure_ascii=False)
     except Exception as e:
         print(f"캐시 저장 오류: {e}")
 
@@ -461,6 +473,8 @@ def load_cache():
                 cache['data'] = saved.get('data', [])
                 cache['all_data'] = saved.get('all_data', [])
                 cache['timestamp'] = saved.get('timestamp')
+                cache['kospi_market_up'] = saved.get('kospi_market_up', None)
+                cache['kosdaq_market_up'] = saved.get('kosdaq_market_up', None)
                 cache['status'] = 'done' if cache['all_data'] else 'idle'
                 print(f"캐시 로드: {len(cache['all_data'])}개 종목")
     except Exception as e:
@@ -475,9 +489,11 @@ def run_scan(stocks_df, requester_ip):
     cache['error'] = None
 
     try:
-        # ── 코스피 시장 상태 체크 ──
-        kospi_up = check_kospi_market()
-        cache['kospi_market_up'] = kospi_up
+        # ── 시장 상태 체크 (코스피/코스닥 별도) ──
+        kospi_up  = check_kospi_market()
+        kosdaq_up = check_kosdaq_market()
+        cache['kospi_market_up']  = kospi_up
+        cache['kosdaq_market_up'] = kosdaq_up
 
         results = []
         rows = list(stocks_df.iterrows())
@@ -492,8 +508,10 @@ def run_scan(stocks_df, requester_ip):
                 res['name'] = r['name']
                 res['market'] = r['market']
 
-                # ── 시장 필터 적용 ──
-                if not kospi_up:
+                # ── 시장별 필터 적용 ──
+                market = r.get('market', 'KOSPI')
+                market_up = kospi_up if market == 'KOSPI' else kosdaq_up
+                if not market_up:
                     res['score'] = max(0, res['score'] - 1)  # 점수 -1
                     # 강력매수 → 매수유망으로 등급 제한
                     if res['signal'] == '강력매수':
@@ -566,6 +584,7 @@ def get_status():
         'count': len(cache['data']), 'error': cache['error'],
         'is_stale': is_stale,
         'kospi_market_up': cache['kospi_market_up'],
+        'kosdaq_market_up': cache['kosdaq_market_up'],
     })
 
 # ── 즐겨찾기 (서버 메모리 저장, 재시작 시 초기화) ──
