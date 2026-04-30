@@ -117,7 +117,11 @@
   .indicators{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
 
   /* 지표 태그 */
-  .ind-tag{padding:4px 9px;border-radius:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;white-space:nowrap;}
+  .ind-tag{padding:4px 9px;border-radius:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
+  .score-pip{font-size:10px;font-weight:700;padding:0px 4px;border-radius:3px;line-height:1.5;letter-spacing:0;}
+  .score-pip-plus{background:rgba(0,230,118,0.25);color:#00e676;}
+  .score-pip-minus{background:rgba(255,23,68,0.2);color:#ff5252;}
+  .ind-penalty{background:rgba(255,23,68,0.08);color:#ff5252;border:1px solid rgba(255,23,68,0.2);}
   .ind-green{background:rgba(0,230,118,0.12);color:var(--green);border:1px solid rgba(0,230,118,0.25);}
   .ind-red{background:rgba(255,23,68,0.12);color:#ff5252;border:1px solid rgba(255,23,68,0.25);}
   .ind-yellow{background:rgba(255,214,0,0.12);color:var(--yellow);border:1px solid rgba(255,214,0,0.25);}
@@ -324,17 +328,17 @@
     <div class="stat-card red">
       <div class="stat-label">RSI ≤ 30</div>
       <div class="stat-value" id="stat-strong">-</div>
-      <div class="stat-desc">강한 매수</div>
+      <div class="stat-desc">극과매도 (강한매수 신호)</div>
     </div>
     <div class="stat-card yellow">
-      <div class="stat-label">RSI ≤ 40</div>
+      <div class="stat-label">매수고려 이상</div>
       <div class="stat-value" id="stat-consider">-</div>
-      <div class="stat-desc">매수 고려</div>
+      <div class="stat-desc" id="stat-consider-desc">매수고려 / 강한매수 신호</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">매수 유망</div>
+      <div class="stat-label">매수유망 이상</div>
       <div class="stat-value" id="stat-promising">-</div>
-      <div class="stat-desc">3개↑ 지표 충족</div>
+      <div class="stat-desc">매수유망 / 강력매수 신호</div>
     </div>
   </div>
 
@@ -600,7 +604,7 @@
         date: today, code: s.code, name: s.name,
         signal: s.signal, score: s.score, rsi: s.rsi,
         price: s.price, change_pct: s.change_pct,
-        ma60_ratio: s.ma60_ratio
+        ma60_ratio: s.ma60_ratio, ma60_penalty: s.ma60_penalty
       });
     });
     // 최대 200개 유지
@@ -632,14 +636,15 @@
             <div class="card-score-label">종합점수</div>
             <div class="card-score-dots">
               ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<h.score?'on':'off'}"></span>`).join('')}
-              <span style="font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/6</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/6</span>
+              ${h.ma60_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">MA60이격 -1</span>` : ''}
             </div>
+            ${h.price ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);display:flex;gap:10px;margin-top:5px;">
+              <span>₩${h.price.toLocaleString()}</span>
+              <span style="color:${h.change_pct>=0?'var(--green)':'var(--red)'}">${h.change_pct>=0?'+':''}${h.change_pct}%</span>
+              ${h.ma60_ratio ? `<span>MA60이격 ${(h.ma60_ratio*100).toFixed(1)}%</span>` : ''}
+            </div>` : ''}
           </div>
-          ${h.price ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);display:flex;gap:10px;margin-top:6px;">
-            <span>₩${h.price.toLocaleString()}</span>
-            <span style="color:${h.change_pct>=0?'var(--green)':'var(--red)'}">${h.change_pct>=0?'+':''}${h.change_pct}%</span>
-            ${h.ma60_ratio ? `<span>MA60이격 ${(h.ma60_ratio*100).toFixed(1)}%</span>` : ''}
-          </div>` : ''}
         </div>
       </div>`).join('');
     el.innerHTML = `<div class="mobile-cards">${rows}</div>
@@ -829,9 +834,15 @@
 
   function updateStats(thr){
     document.getElementById('stat-total').textContent = allData.length||'-';
-    document.getElementById('stat-strong').textContent = allData.filter(s=>s.rsi<=30).length||'-';
-    document.getElementById('stat-consider').textContent = allData.filter(s=>s.rsi<=40).length||'-';
-    document.getElementById('stat-promising').textContent = allData.filter(s=>['매수유망','강력매수','강한매수'].includes(s.signal)).length||'-';
+    // RSI ≤ 30 이면서 강한매수 신호인 종목
+    document.getElementById('stat-strong').textContent =
+      allData.filter(s=>s.rsi<=30 && s.rsi_ma60_valid).length||'-';
+    // 매수고려 이상 신호 (매수고려 + 강한매수)
+    const considerCount = allData.filter(s=>['매수고려','강한매수'].includes(s.signal)).length;
+    document.getElementById('stat-consider').textContent = considerCount||'-';
+    // 매수유망 이상 신호 (매수유망 + 강력매수)
+    document.getElementById('stat-promising').textContent =
+      allData.filter(s=>['매수유망','강력매수'].includes(s.signal)).length||'-';
   }
 
   function renderResults(ts){
@@ -863,33 +874,39 @@
     'MA20아래': '현재가 < 20일 이동평균\n단기 하락 추세',
     'MA60위': '현재가 > 60일 이동평균\n중기 상승 추세 유지',
     '상승추세': 'MA20 위 + MA60 우상향\n중·단기 추세 모두 살아있음',
-    '거래량급증': '20일 평균 1.5배 이상 + 양봉\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n4중 검증 통과 시에만 인정',
+    '거래량급증': '20일 평균 1.5배 이상 + 양봉\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수 반영\nRSI 60 초과(과열)면 오히려 고점 가능성',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
+    'MA60이격': 'MA60 이격도 85~95% 구간\nMA60 우상향이지만 현재가가 아직 MA60 위로 충분히 올라오지 못한 상태\n눌림 구간으로 판정 → 점수 -1 패널티 적용',
   };
+
+  // pip = +1 배지, penalty = MA60 패널티 태그 여부
+  function pip(){ return `<span class="score-pip score-pip-plus">+1</span>`; }
+  function pipMinus(){ return `<span class="score-pip score-pip-minus">-1</span>`; }
 
   function indTags(s){
     const tags = [];
-    // RSI 태그: MA60 하락 중이면 흐리게 표시 (점수 미반영 경고)
     const rsiValid = s.rsi_ma60_valid;
-    if (s.rsi<=30) tags.push([rsiValid?'ind-red ind-scored':'ind-dim', 'RSI극과매도']);
-    else if (s.rsi<=40) tags.push([rsiValid?'ind-yellow ind-scored':'ind-dim', 'RSI과매도']);
-    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세']);
-    else if (s.above_ma20) tags.push(['ind-blue','MA20위']);
-    else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
-    else tags.push(['ind-dim','MA20아래']);
-    if (s.above_ma60) tags.push(['ind-green','MA60위']);
-    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
-    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목']);
-    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%']);
-    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
-    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern]);
-    return tags.map(([cls,txt])=>`
+    if (s.rsi<=30) tags.push([rsiValid?'ind-red ind-scored':'ind-dim', 'RSI극과매도', rsiValid]);
+    else if (s.rsi<=40) tags.push([rsiValid?'ind-yellow ind-scored':'ind-dim', 'RSI과매도', rsiValid]);
+    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세', true]);
+    else if (s.above_ma20) tags.push(['ind-blue','MA20위', false]);
+    else if (s.near_ma20) tags.push(['ind-blue','MA20근접', false]);
+    else tags.push(['ind-dim','MA20아래', false]);
+    if (s.above_ma60) tags.push(['ind-green','MA60위', false]);
+    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
+    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
+    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%', true]);
+    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
+    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
+    // MA60 패널티
+    if (s.ma60_penalty) tags.push(['ind-penalty','MA60이격', 'penalty']);
+    return tags.map(([cls,txt,scored])=>`
       <span class="tooltip-wrap">
-        <span class="ind-tag ${cls}">${txt}</span>
+        <span class="ind-tag ${cls}">${txt}${scored===true?pip():scored==='penalty'?pipMinus():''}</span>
         <span class="tooltip-box">${(IND_TIPS[txt]||txt).replace(/\n/g,'<br>')}</span>
       </span>`).join('');
   }
@@ -897,19 +914,20 @@
   function indTagsDesktop(s){
     const tags = [];
     const rsiValid = s.rsi_ma60_valid;
-    if (s.rsi<=30) tags.push([rsiValid?'ind-red ind-scored':'ind-dim', 'RSI극과매도']);
-    else if (s.rsi<=40) tags.push([rsiValid?'ind-yellow ind-scored':'ind-dim', 'RSI과매도']);
-    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세']);
-    else if (s.above_ma20) tags.push(['ind-blue','MA20위']);
-    else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
-    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
-    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목']);
-    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%']);
-    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
-    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern]);
-    return tags.map(([cls,txt])=>`
+    if (s.rsi<=30) tags.push([rsiValid?'ind-red ind-scored':'ind-dim', 'RSI극과매도', rsiValid]);
+    else if (s.rsi<=40) tags.push([rsiValid?'ind-yellow ind-scored':'ind-dim', 'RSI과매도', rsiValid]);
+    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세', true]);
+    else if (s.above_ma20) tags.push(['ind-blue','MA20위', false]);
+    else if (s.near_ma20) tags.push(['ind-blue','MA20근접', false]);
+    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
+    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
+    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%', true]);
+    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
+    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
+    if (s.ma60_penalty) tags.push(['ind-penalty','MA60이격', 'penalty']);
+    return tags.map(([cls,txt,scored])=>`
       <span class="tooltip-wrap">
-        <span class="ind-tag ${cls}">${txt}</span>
+        <span class="ind-tag ${cls}">${txt}${scored===true?pip():scored==='penalty'?pipMinus():''}</span>
         <span class="tooltip-box">${(IND_TIPS[txt]||txt).replace(/\n/g,'<br>')}</span>
       </span>`).join('');
   }
@@ -977,7 +995,11 @@
         <div class="card-footer">
           <div class="card-score-wrap">
             <div class="card-score-label">종합점수</div>
-            <div class="card-score-dots">${dots}<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/6</span></div>
+            <div class="card-score-dots">
+              ${dots}
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/6</span>
+              ${s.ma60_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">MA60이격 -1</span>` : ''}
+            </div>
           </div>
           <div class="card-stats">
             <div class="card-stat">
@@ -1004,7 +1026,13 @@
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
             <div class="stock-name">${s.name}</div>
-            <div class="stock-code">${s.code} · 점수 ${s.score}/6</div>
+            <div class="stock-code" style="display:flex;align-items:center;gap:5px;margin-top:3px;">
+              <span>${s.code}</span>
+              <span style="color:var(--border);">·</span>
+              ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('')}
+              <span style="font-size:10px;color:var(--text-dim);">${s.score}/6</span>
+              ${s.ma60_penalty ? `<span class="score-pip score-pip-minus">-1</span>` : ''}
+            </div>
           </td>
           <td style="text-align:center;">
             <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')" title="즐겨찾기">${favorites.has(s.code)?'⭐':'☆'}</button>
