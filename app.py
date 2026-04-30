@@ -201,7 +201,21 @@ def fetch_stock_data(code, period=14):
         change = round((price - prev) / prev * 100, 2)
 
         # ── RSI ──
-        rsi_val = round(float(ta.momentum.RSIIndicator(close, window=14).rsi().iloc[-1]), 2)
+        rsi_series = ta.momentum.RSIIndicator(close, window=14).rsi()
+        rsi_val = round(float(rsi_series.iloc[-1]), 2)
+
+        # RSI Signal선 (9일 MA) + 골든크로스
+        rsi_signal = rsi_series.rolling(window=9).mean()
+        rsi_golden = (
+            rsi_series.iloc[-2] <= rsi_signal.iloc[-2] and
+            rsi_series.iloc[-1] > rsi_signal.iloc[-1]
+        )
+        # RSI가 Signal선보다 5% 이상 위
+        rsi_golden_5 = (
+            not rsi_golden and
+            rsi_signal.iloc[-1] > 0 and
+            rsi_series.iloc[-1] >= rsi_signal.iloc[-1] * 1.05
+        )
 
         # ── 이동평균선 ──
         ma20 = round(float(close.rolling(min(20,n)).mean().iloc[-1]), 0) if n >= 20 else price
@@ -334,7 +348,7 @@ def fetch_stock_data(code, period=14):
         return {
             'name': None, 'code': code, 'market': None,
             'price': price, 'change_pct': change,
-            'rsi': rsi_val,
+            'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_5': rsi_golden_5,
             'ma20': ma20, 'ma60': ma60,
             'above_ma20': above_ma20, 'above_ma60': above_ma60, 'near_ma20': near_ma20,
             'ma60_rising': ma60_rising, 'is_uptrend': is_uptrend,
