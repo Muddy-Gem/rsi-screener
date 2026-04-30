@@ -119,6 +119,16 @@
   .ind-orange{background:rgba(255,152,0,0.12);color:var(--orange);border:1px solid rgba(255,152,0,0.25);}
   .ind-dim{background:rgba(100,116,139,0.12);color:var(--text-dim);border:1px solid var(--border);}
 
+  /* 점수 반영 태그 반짝이는 테두리 */
+  @keyframes shimmer {
+    0%   { box-shadow: 0 0 0px 0px rgba(255,255,255,0); border-color: rgba(255,255,255,0.15); }
+    50%  { box-shadow: 0 0 6px 1px rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.55); }
+    100% { box-shadow: 0 0 0px 0px rgba(255,255,255,0); border-color: rgba(255,255,255,0.15); }
+  }
+  .ind-scored {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
   /* 카드 하단 수치 */
   .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
   .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
@@ -717,16 +727,16 @@
 
   function indTags(s){
     const tags = [];
-    if (s.rsi<=30) tags.push(['ind-red','RSI극과매도']);
-    else if (s.rsi<=40) tags.push(['ind-yellow','RSI과매도']);
-    if (s.is_uptrend) tags.push(['ind-green','상승추세']);
+    if (s.rsi<=30) tags.push(['ind-red ind-scored','RSI극과매도']);
+    else if (s.rsi<=40) tags.push(['ind-yellow ind-scored','RSI과매도']);
+    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세']);
     else if (s.above_ma20) tags.push(['ind-blue','MA20위']);
     else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
     else tags.push(['ind-dim','MA20아래']);
     if (s.above_ma60) tags.push(['ind-green','MA60위']);
-    if (s.is_volume_surge) tags.push(['ind-yellow','거래량급증']);
+    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
-    if (s.macd_golden) tags.push(['ind-green','MACD골든']);
+    if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
     if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
     if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
@@ -738,14 +748,14 @@
 
   function indTagsDesktop(s){
     const tags = [];
-    if (s.rsi<=30) tags.push(['ind-red','RSI극과매도']);
-    else if (s.rsi<=40) tags.push(['ind-yellow','RSI과매도']);
-    if (s.is_uptrend) tags.push(['ind-green','상승추세']);
+    if (s.rsi<=30) tags.push(['ind-red ind-scored','RSI극과매도']);
+    else if (s.rsi<=40) tags.push(['ind-yellow ind-scored','RSI과매도']);
+    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세']);
     else if (s.above_ma20) tags.push(['ind-blue','MA20위']);
     else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
-    if (s.is_volume_surge) tags.push(['ind-yellow','거래량급증']);
+    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
-    if (s.macd_golden) tags.push(['ind-green','MACD골든']);
+    if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
     if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
     if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
