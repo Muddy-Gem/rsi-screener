@@ -335,15 +335,15 @@ def fetch_stock_data(code, period=14):
         if rsi_val <= 30 and rsi_ma60_valid: score += 1  # RSI 극과매도 추가점
         if is_uptrend: score += 1                         # 상승추세 (MA20 위 + MA60 우상향)
         if is_volume_surge: score += 1                    # 거래량 증가 (평균 1.5배 + 양봉)
-        if rsi_golden_5: score += 1                       # RSI Signal선 5% 이상 위
+        if rsi_golden_5 and rsi_val <= 60: score += 1    # RSI골든5% - RSI 60 이하에서만 점수 반영 (과열 구간 제외)
         if is_pullback: score += 1                        # 눌림목 (MA20 근처 + 3일 하락)
         if candle_pattern: score += 1                     # 캔들패턴 (망치형/장악형/장대양봉)
 
-        if score >= 5:   signal = '강력매수'
-        elif score >= 3: signal = '매수유망'
+        if score >= 5:      signal = '강력매수'
+        elif score >= 3 and rsi_val <= 60: signal = '매수유망'   # RSI 60 이하일 때만 매수유망
         elif rsi_val <= 30: signal = '강한매수'
         elif rsi_val <= 40: signal = '매수고려'
-        else:            signal = '관망'
+        else:               signal = '관망'
 
         result = {
             'name': None, 'code': code, 'market': None,
