@@ -234,6 +234,59 @@ def fetch_stock_data(code, period=14):
         price_3days_ago = round(float(close.iloc[-4]), 0) if n >= 4 else price
         is_pullback = (0 <= ma20_pct <= 10) and (price < price_3days_ago)
 
+        # ── 스토캐스틱 (14,3,3) ──
+        if n >= 14:
+            stoch = ta.momentum.StochasticOscillator(
+                hist['High'], hist['Low'], close,
+                window=14, smooth_window=3
+            )
+            stoch_k = round(float(stoch.stoch().iloc[-1]), 2)
+            stoch_d = round(float(stoch.stoch_signal().iloc[-1]), 2)
+            stoch_k_prev = round(float(stoch.stoch().iloc[-2]), 2)
+            stoch_d_prev = round(float(stoch.stoch_signal().iloc[-2]), 2)
+            # %K ≤ 20 + %K가 %D 상향 돌파
+            stoch_golden = (stoch_k <= 20) and (stoch_k_prev <= stoch_d_prev) and (stoch_k > stoch_d)
+        else:
+            stoch_k = stoch_d = 50.0
+            stoch_golden = False
+
+        # ── 캔들패턴 ──
+        op = float(hist['Open'].iloc[-1])
+        hi = float(hist['High'].iloc[-1])
+        lo = float(hist['Low'].iloc[-1])
+        cl = float(hist['Close'].iloc[-1])
+        op_prev = float(hist['Open'].iloc[-2])
+        cl_prev = float(hist['Close'].iloc[-2])
+
+        body = abs(cl - op)
+        candle_range = hi - lo if hi != lo else 0.0001
+        lower_wick = min(op, cl) - lo
+        upper_wick = hi - max(op, cl)
+
+        # 망치형: 아래꼬리 > 몸통 2배 + 위꼬리 < 몸통 0.5배 + 양봉
+        is_hammer = (
+            lower_wick >= body * 2 and
+            upper_wick <= body * 0.5 and
+            cl > op
+        )
+        # 장대양봉: 몸통이 전체 캔들의 70% 이상
+        is_marubozu = (
+            cl > op and
+            body / candle_range >= 0.7
+        )
+        # 상승장악형: 전일 음봉 + 오늘 양봉이 전일 몸통 완전히 감쌈
+        is_engulfing = (
+            cl_prev < op_prev and   # 전일 음봉
+            cl > op and             # 오늘 양봉
+            cl > op_prev and        # 오늘 종가 > 전일 시가
+            op < cl_prev            # 오늘 시가 < 전일 종가
+        )
+
+        candle_pattern = None
+        if is_hammer:     candle_pattern = '망치형'
+        elif is_engulfing: candle_pattern = '장악형'
+        elif is_marubozu:  candle_pattern = '장대양봉'
+
         # ── 볼린저밴드 (20일, 2σ) ──
         if n >= 20:
             bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
@@ -287,6 +340,8 @@ def fetch_stock_data(code, period=14):
             'ma60_rising': ma60_rising, 'is_uptrend': is_uptrend,
             'vol_ratio': vol_ratio, 'is_bullish': is_bullish, 'is_volume_surge': is_volume_surge,
             'is_pullback': is_pullback, 'ma20_pct': ma20_pct,
+            'stoch_k': stoch_k, 'stoch_d': stoch_d, 'stoch_golden': stoch_golden,
+            'candle_pattern': candle_pattern,
             'bb_upper': bb_upper, 'bb_lower': bb_lower, 'bb_mid': bb_mid, 'bb_pct': bb_pct,
             'near_bb_lower': near_bb_lower,
             'macd': macd_val, 'macd_signal': macd_sig, 'macd_golden': macd_golden,
