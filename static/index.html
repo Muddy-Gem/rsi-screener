@@ -598,7 +598,9 @@
       const exists = signalHistory.some(h => h.date === today && h.code === s.code);
       if (!exists) signalHistory.unshift({
         date: today, code: s.code, name: s.name,
-        signal: s.signal, score: s.score, rsi: s.rsi
+        signal: s.signal, score: s.score, rsi: s.rsi,
+        price: s.price, change_pct: s.change_pct,
+        ma60_ratio: s.ma60_ratio
       });
     });
     // 최대 200개 유지
@@ -633,6 +635,11 @@
               <span style="font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/6</span>
             </div>
           </div>
+          ${h.price ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);display:flex;gap:10px;margin-top:6px;">
+            <span>₩${h.price.toLocaleString()}</span>
+            <span style="color:${h.change_pct>=0?'var(--green)':'var(--red)'}">${h.change_pct>=0?'+':''}${h.change_pct}%</span>
+            ${h.ma60_ratio ? `<span>MA60이격 ${(h.ma60_ratio*100).toFixed(1)}%</span>` : ''}
+          </div>` : ''}
         </div>
       </div>`).join('');
     el.innerHTML = `<div class="mobile-cards">${rows}</div>
@@ -710,7 +717,13 @@
     try {
       const r = await fetch('/api/quick-scan');
       const d = await r.json();
-      if (d.status==='scanning'){ document.getElementById('progress-text').textContent=d.message||'스캔 중...'; poll(); }
+      if (d.status === 'cooldown'){
+        alert(d.message);
+        setScanUI(false);
+      } else if (d.status==='scanning'){
+        document.getElementById('progress-text').textContent=d.message||'스캔 중...';
+        poll();
+      }
     } catch(e){ alert('오류: '+e.message); setScanUI(false); }
   }
 
@@ -746,6 +759,10 @@
           const st2 = await fetch('/api/status');
           const s2 = await st2.json();
           document.getElementById('market-banner').style.display = s2.kospi_market_up === false ? 'flex' : 'none';
+        } else if (s.status==='error'){
+          clearInterval(scanInterval); scanInterval=null;
+          setScanUI(false);
+          alert('스캔 중 오류가 발생했습니다: ' + (s.error || '알 수 없는 오류'));
         }
       } catch(e){}
     }, 500);
