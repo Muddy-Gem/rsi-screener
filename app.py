@@ -185,13 +185,23 @@ def fetch_stock_data(code, period=14):
     [변경] 볼린저밴드 점수 제거 → 상승추세(+1점), 거래량증가(+1점), 눌림목(태그) 추가
     """
     try:
-        stock = yf.Ticker(f"{code}.KS")
-        hist = stock.history(period="1y")
-        if hist.empty:
-            stock = yf.Ticker(f"{code}.KQ")
-            hist = stock.history(period="1y")
+        hist = None
+        for attempt in range(2):  # 실패 시 1회 재시도
+            try:
+                stock = yf.Ticker(f"{code}.KS")
+                hist = stock.history(period="1y", timeout=10)
+                if hist.empty:
+                    stock = yf.Ticker(f"{code}.KQ")
+                    hist = stock.history(period="1y", timeout=10)
+                if not hist.empty:
+                    break
+            except Exception:
+                if attempt == 0:
+                    time.sleep(1)  # 1초 후 재시도
+                else:
+                    return None
         # 최소 15개(RSI용)만 있으면 처리, 부족한 지표는 기본값 사용
-        if hist.empty or len(hist) < 15:
+        if hist is None or hist.empty or len(hist) < 15:
             return None
 
         close = hist['Close']
@@ -394,7 +404,7 @@ def run_scan(stocks_df, requester_ip):
             res['market'] = r['market']
         return res
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
         futures = {ex.submit(fetch_one, row): row for row in rows}
         for fut in concurrent.futures.as_completed(futures):
             res = fut.result()
