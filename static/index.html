@@ -130,6 +130,22 @@
     border-width: 1.5px;
   }
 
+  /* RSI골든5% 무지개 반짝이 */
+  @keyframes rainbow {
+    0%   { border-color: #ff4e4e; box-shadow: 0 0 6px 2px rgba(255,78,78,0.4); }
+    16%  { border-color: #ff9a00; box-shadow: 0 0 6px 2px rgba(255,154,0,0.4); }
+    33%  { border-color: #ffe600; box-shadow: 0 0 6px 2px rgba(255,230,0,0.4); }
+    50%  { border-color: #4cff72; box-shadow: 0 0 6px 2px rgba(76,255,114,0.4); }
+    66%  { border-color: #00cfff; box-shadow: 0 0 6px 2px rgba(0,207,255,0.4); }
+    83%  { border-color: #a259ff; box-shadow: 0 0 6px 2px rgba(162,89,255,0.4); }
+    100% { border-color: #ff4e4e; box-shadow: 0 0 6px 2px rgba(255,78,78,0.4); }
+  }
+  .ind-rainbow {
+    animation: rainbow 2s linear infinite;
+    border-width: 2px;
+    font-weight: 600;
+  }
+
   /* 카드 하단 수치 */
   .card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--surface2);border-radius:8px;padding:10px 12px;}
   .card-stat-label{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
@@ -719,10 +735,11 @@
     '상승추세': 'MA20 위 + MA60 우상향\n중·단기 추세 모두 살아있음',
     '거래량급증': '20일 평균 거래량 1.2배 이상 + 양봉\n반등하면서 매수세 유입 확인',
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락\n추세 속 일시 조정 → 매수 타이밍',
+    'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
+    'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\n돌파 후 상승 모멘텀이 유지되고 있는 상태',
     'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
     '스토골든': '스토캐스틱 %K ≤ 20 + %K가 %D 상향 돌파\nRSI와 함께 뜨면 이중 과매도 반등 신호',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
-    '장대양봉': '몸통이 캔들 전체의 70% 이상인 양봉\n강한 상승 전환. 매수세가 압도적',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
   };
 
@@ -739,6 +756,8 @@
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
     if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
     if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
+    if (s.rsi_golden_5) tags.push(['ind-rainbow','RSI골든5%']);
+    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
     if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
@@ -758,6 +777,8 @@
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
     if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
     if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
+    if (s.rsi_golden_5) tags.push(['ind-rainbow','RSI골든5%']);
+    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
     if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
