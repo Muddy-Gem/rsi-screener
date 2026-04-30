@@ -181,7 +181,7 @@ def get_stocks():
     return pd.DataFrame(STOCKS)
 
 def fetch_stock_data(code, period=14):
-    """종목 데이터 + RSI + 이동평균 + 볼린저밴드 + MACD + 52주 고저 계산
+    """종목 데이터 + RSI + 이동평균 + 볼린저밴드 + 52주 고저 계산
     [변경] 볼린저밴드 점수 제거 → 상승추세(+1점), 거래량증가(+1점), 눌림목(태그) 추가
     """
     try:
@@ -309,35 +309,23 @@ def fetch_stock_data(code, period=14):
             bb_pct = 50.0
         near_bb_lower = bb_pct <= 20
 
-        # ── MACD (최소 27개 필요) ──
-        if n >= 27:
-            macd_obj      = ta.trend.MACD(close, window_slow=26, window_fast=12, window_sign=9)
-            macd_series   = macd_obj.macd()
-            macd_sig_series = macd_obj.macd_signal()
-            macd_val      = round(float(macd_series.iloc[-1]), 2)
-            macd_sig      = round(float(macd_sig_series.iloc[-1]), 2)
-            macd_prev     = round(float(macd_series.iloc[-2]), 2)
-            macd_sig_prev = round(float(macd_sig_series.iloc[-2]), 2)
-            macd_golden   = (macd_prev < macd_sig_prev) and (macd_val >= macd_sig)
-        else:
-            macd_val = macd_sig = 0.0
-            macd_golden = False
-
         # ── 52주 고저 ──
         high_52 = round(float(close.tail(252).max()), 0)
         low_52  = round(float(close.tail(252).min()), 0)
         pct_from_low  = round((price - low_52) / low_52 * 100, 1)
         pct_from_high = round((price - high_52) / high_52 * 100, 1)
 
-        # ── 종합 신호 점수 (0~5점) ──
+        # ── 종합 신호 점수 (0~6점) ──
         score = 0
         if rsi_val <= 40: score += 1
         if rsi_val <= 30: score += 1      # RSI 극과매도 추가점
         if is_uptrend: score += 1         # 상승추세 (MA20 위 + MA60 우상향)
         if is_volume_surge: score += 1    # 거래량 증가 (평균 1.2배 + 양봉)
-        if macd_golden: score += 1
+        if rsi_golden_5: score += 1       # RSI Signal선 5% 이상 위
+        if is_pullback: score += 1        # 눌림목 (MA20 근처 + 3일 하락)
+        if candle_pattern: score += 1     # 캔들패턴 (망치형/장악형/장대양봉)
 
-        if score >= 4:   signal = '강력매수'
+        if score >= 5:   signal = '강력매수'
         elif score >= 3: signal = '매수유망'
         elif rsi_val <= 30: signal = '강한매수'
         elif rsi_val <= 40: signal = '매수고려'
@@ -355,7 +343,6 @@ def fetch_stock_data(code, period=14):
             'candle_pattern': candle_pattern,
             'bb_upper': bb_upper, 'bb_lower': bb_lower, 'bb_mid': bb_mid, 'bb_pct': bb_pct,
             'near_bb_lower': near_bb_lower,
-            'macd': macd_val, 'macd_signal': macd_sig, 'macd_golden': macd_golden,
             'high_52': high_52, 'low_52': low_52,
             'pct_from_low': pct_from_low, 'pct_from_high': pct_from_high,
             'score': score, 'signal': signal,
