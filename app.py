@@ -250,15 +250,22 @@ def fetch_stock_data(code, period=14):
         volume = hist['Volume']
         vol_current = float(volume.iloc[-1])
         vol_ma20 = float(volume.rolling(min(20,n)).mean().iloc[-1]) if n >= 20 else vol_current
+        # 거래량 이상값 필터: 0이거나 평균의 20배 초과면 신뢰 불가
+        vol_valid = vol_ma20 > 0 and vol_current < vol_ma20 * 20
         vol_ratio = round(vol_current / vol_ma20, 2) if vol_ma20 > 0 else 0.0
         open_price = float(hist['Open'].iloc[-1])
         is_bullish = price > open_price  # 양봉 여부
-        is_volume_surge = vol_ratio >= 1.2 and is_bullish
+        is_volume_surge = vol_valid and vol_ratio >= 1.2 and is_bullish
 
-        # ── 눌림목: MA20 기준 0~10% 위 + 3일 전보다 하락 ──
+        # ── 눌림목: MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내 ──
         ma20_pct = round((price - ma20) / ma20 * 100, 2) if ma20 > 0 else 0.0
         price_3days_ago = round(float(close.iloc[-4]), 0) if n >= 4 else price
-        is_pullback = (0 <= ma20_pct <= 10) and (price < price_3days_ago)
+        drop_pct = (price - price_3days_ago) / price_3days_ago * 100 if price_3days_ago > 0 else 0
+        is_pullback = (
+            (0 <= ma20_pct <= 10) and
+            (price < price_3days_ago) and
+            (drop_pct >= -10)  # 급락(-10% 초과)은 눌림목 아님
+        )
 
         # ── 캔들패턴 ──
         op = float(hist['Open'].iloc[-1])
@@ -436,11 +443,41 @@ def index():
 
 @app.route('/api/status')
 def get_status():
+    # 캐시 만료 여부 체크 (당일 오전 8시 이후 스캔 여부)
+    is_stale = False
+    if cache['timestamp']:
+        try:
+            kst = pytz.timezone('Asia/Seoul')
+            now = datetime.now(kst)
+            scan_time = kst.localize(datetime.strptime(cache['timestamp'], '%Y-%m-%d %H:%M:%S'))
+            # 오늘 날짜가 다르거나, 오늘 8시 이후인데 스캔이 어제면 stale
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            is_stale = scan_time < today_8am
+        except:
+            is_stale = False
     return jsonify({
         'status': cache['status'], 'progress': cache['progress'],
         'total': cache['total'], 'timestamp': cache['timestamp'],
-        'count': len(cache['data']), 'error': cache['error']
+        'count': len(cache['data']), 'error': cache['error'],
+        'is_stale': is_stale,
     })
+
+# ── 즐겨찾기 (서버 메모리 저장, 재시작 시 초기화) ──
+favorites = set()
+
+@app.route('/api/favorites', methods=['GET'])
+def get_favorites():
+    return jsonify({'favorites': list(favorites)})
+
+@app.route('/api/favorites/<code>', methods=['POST'])
+def add_favorite(code):
+    favorites.add(code)
+    return jsonify({'favorites': list(favorites)})
+
+@app.route('/api/favorites/<code>', methods=['DELETE'])
+def remove_favorite(code):
+    favorites.discard(code)
+    return jsonify({'favorites': list(favorites)})
 
 @app.route('/api/results')
 def get_results():
