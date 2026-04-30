@@ -369,7 +369,7 @@
   </div>
 
   <div class="notice">
-    💡 RSI + 상승추세(MA20·MA60) + 거래량급증 + MACD + 52주 고저 분석<br>
+    💡 RSI + 상승추세(MA20·MA60) + 거래량급증 + RSI골든 + 52주 고저 분석<br>
     매일 오전 8시 자동 갱신 · 데이터: Yahoo Finance (전일종가 기준)
   </div>
 
@@ -453,20 +453,6 @@
           </div>
         </div>
 
-        <!-- MACD -->
-        <div class="guide-item g-macd">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-            <span class="ind-tag ind-green" style="font-size:11px;">MACD골든</span>
-          </div>
-          <div class="guide-item-title" style="margin-bottom:6px;">MACD</div>
-          <div class="guide-item-desc">
-            12일 - 26일 지수이동평균 차이<br>
-            <span style="color:var(--green);">MACD골든</span> MACD선이 시그널선 상향 돌파<br>
-            단기 상승 전환 신호<br>
-            <span style="opacity:0.6;font-size:10px;">전일종가 기준으로 안정적인 지표</span>
-          </div>
-        </div>
-
         <!-- 캔들패턴 -->
         <div class="guide-item" style="border-left:3px solid var(--orange);">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
@@ -508,8 +494,9 @@
           <div class="guide-item-desc">
             RSI≤40 +1점 / RSI≤30 추가 +1점<br>
             상승추세(MA20위+MA60우상향) +1점<br>
-            거래량급증(평균1.2배+양봉) +1점 / MACD골든 +1점<br>
-            <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">4점↑ 강력매수</span>
+            거래량급증(평균1.2배+양봉) +1점 / RSI골든5% +1점<br>
+            눌림목(MA20근처+3일하락) +1점 / 캔들패턴 +1점<br>
+            <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">5점↑ 강력매수</span>
           </div>
         </div>
 
@@ -741,7 +728,6 @@
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락\n추세 속 일시 조정 → 매수 타이밍',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\n돌파 후 상승 모멘텀이 유지되고 있는 상태',
-    'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
   };
@@ -756,11 +742,10 @@
     else tags.push(['ind-dim','MA20아래']);
     if (s.above_ma60) tags.push(['ind-green','MA60위']);
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
-    if (s.is_pullback) tags.push(['ind-dim','눌림목']);
-    if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
-    if (s.rsi_golden_5) tags.push(['ind-rainbow','RSI골든5%']);
+    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목']);
+    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%']);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
-    if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
+    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
         <span class="ind-tag ${cls}">${txt}</span>
@@ -776,11 +761,10 @@
     else if (s.above_ma20) tags.push(['ind-blue','MA20위']);
     else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
-    if (s.is_pullback) tags.push(['ind-dim','눌림목']);
-    if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
-    if (s.rsi_golden_5) tags.push(['ind-rainbow','RSI골든5%']);
+    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목']);
+    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%']);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
-    if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
+    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
         <span class="ind-tag ${cls}">${txt}</span>
@@ -822,9 +806,9 @@
 
     // 모바일 카드
     const cards = `<div class="mobile-cards">${data.map((s,i)=>{
-      const dots = Array.from({length:5},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
+      const dots = Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
       return `
-      <div class="stock-card ${s.score>=4?'highlight':s.rsi<=30?'highlight-strong':''}">
+      <div class="stock-card ${s.score>=5?'highlight':s.rsi<=30?'highlight-strong':''}">
         <div class="card-top">
           <div class="card-left">
             <div class="card-rank">#${i+1} · ${s.code} · <span style="font-family:'IBM Plex Mono',monospace;">${s.market}</span></div>
@@ -871,7 +855,7 @@
         <th>RSI(14)</th><th>거래량</th><th>지표</th><th>52주위치</th><th>신호</th>
       </tr></thead>
       <tbody>${data.map((s,i)=>`
-        <tr class="${s.score>=4?'row-highlight':''}">
+        <tr class="${s.score>=5?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
             <div class="stock-name">${s.name}</div>
