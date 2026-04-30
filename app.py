@@ -218,15 +218,17 @@ def fetch_stock_data(code, period=14):
         )
 
         # ── 이동평균선 ──
-        ma20 = round(float(close.rolling(min(20,n)).mean().iloc[-1]), 0) if n >= 20 else price
-        ma60 = round(float(close.rolling(min(60,n)).mean().iloc[-1]), 0) if n >= 60 else price
+        ma20_series = close.rolling(min(20,n)).mean()
+        ma60_series = close.rolling(min(60,n)).mean()
+        ma20 = round(float(ma20_series.iloc[-1]), 0) if n >= 20 else price
+        ma60 = round(float(ma60_series.iloc[-1]), 0) if n >= 60 else price
         above_ma20 = price >= ma20
         above_ma60 = price >= ma60 if n >= 60 else False
         near_ma20 = abs(price - ma20) / ma20 <= 0.03 if n >= 20 else False
 
         # ── MA60 우상향 (5일 전 MA60 대비 현재 MA60이 높으면 우상향) ──
         if n >= 65:
-            ma60_5days_ago = round(float(close.rolling(60).mean().iloc[-6]), 0)
+            ma60_5days_ago = round(float(ma60_series.iloc[-6]), 0)
             ma60_rising = ma60 > ma60_5days_ago
         else:
             ma60_rising = False
@@ -247,22 +249,6 @@ def fetch_stock_data(code, period=14):
         ma20_pct = round((price - ma20) / ma20 * 100, 2) if ma20 > 0 else 0.0
         price_3days_ago = round(float(close.iloc[-4]), 0) if n >= 4 else price
         is_pullback = (0 <= ma20_pct <= 10) and (price < price_3days_ago)
-
-        # ── 스토캐스틱 (14,3,3) ──
-        if n >= 14:
-            stoch = ta.momentum.StochasticOscillator(
-                hist['High'], hist['Low'], close,
-                window=14, smooth_window=3
-            )
-            stoch_k = round(float(stoch.stoch().iloc[-1]), 2)
-            stoch_d = round(float(stoch.stoch_signal().iloc[-1]), 2)
-            stoch_k_prev = round(float(stoch.stoch().iloc[-2]), 2)
-            stoch_d_prev = round(float(stoch.stoch_signal().iloc[-2]), 2)
-            # %K ≤ 20 + %K가 %D 상향 돌파
-            stoch_golden = (stoch_k <= 20) and (stoch_k_prev <= stoch_d_prev) and (stoch_k > stoch_d)
-        else:
-            stoch_k = stoch_d = 50.0
-            stoch_golden = False
 
         # ── 캔들패턴 ──
         op = float(hist['Open'].iloc[-1])
@@ -315,12 +301,14 @@ def fetch_stock_data(code, period=14):
 
         # ── MACD (최소 27개 필요) ──
         if n >= 27:
-            macd_obj  = ta.trend.MACD(close, window_slow=26, window_fast=12, window_sign=9)
-            macd_val  = round(float(macd_obj.macd().iloc[-1]), 2)
-            macd_sig  = round(float(macd_obj.macd_signal().iloc[-1]), 2)
-            macd_prev = round(float(macd_obj.macd().iloc[-2]), 2)
-            macd_sig_prev = round(float(macd_obj.macd_signal().iloc[-2]), 2)
-            macd_golden = (macd_prev < macd_sig_prev) and (macd_val >= macd_sig)
+            macd_obj      = ta.trend.MACD(close, window_slow=26, window_fast=12, window_sign=9)
+            macd_series   = macd_obj.macd()
+            macd_sig_series = macd_obj.macd_signal()
+            macd_val      = round(float(macd_series.iloc[-1]), 2)
+            macd_sig      = round(float(macd_sig_series.iloc[-1]), 2)
+            macd_prev     = round(float(macd_series.iloc[-2]), 2)
+            macd_sig_prev = round(float(macd_sig_series.iloc[-2]), 2)
+            macd_golden   = (macd_prev < macd_sig_prev) and (macd_val >= macd_sig)
         else:
             macd_val = macd_sig = 0.0
             macd_golden = False
@@ -354,7 +342,6 @@ def fetch_stock_data(code, period=14):
             'ma60_rising': ma60_rising, 'is_uptrend': is_uptrend,
             'vol_ratio': vol_ratio, 'is_bullish': is_bullish, 'is_volume_surge': is_volume_surge,
             'is_pullback': is_pullback, 'ma20_pct': ma20_pct,
-            'stoch_k': stoch_k, 'stoch_d': stoch_d, 'stoch_golden': stoch_golden,
             'candle_pattern': candle_pattern,
             'bb_upper': bb_upper, 'bb_lower': bb_lower, 'bb_mid': bb_mid, 'bb_pct': bb_pct,
             'near_bb_lower': near_bb_lower,
