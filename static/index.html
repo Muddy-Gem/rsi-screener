@@ -394,7 +394,12 @@
 
   <!-- 코스피 하락장 경고 -->
   <div id="market-banner" style="display:none;background:rgba(255,23,68,0.10);border:1px solid rgba(255,23,68,0.3);border-radius:8px;padding:10px 14px;margin:0 0 10px;font-size:12px;color:#ff5252;align-items:center;gap:8px;">
-    📉 <span><b>코스피 MA60 하락 추세</b> · 시장 하락장 감지 — 신호 신뢰도 낮음 (score -1, 강력매수 제한 적용)</span>
+    📉 <span><b>코스피 MA60 하락 추세</b> · KOSPI 종목 신호 신뢰도 낮음 (score -1, 강력매수 제한 적용)</span>
+  </div>
+
+  <!-- 코스닥 하락장 경고 -->
+  <div id="kosdaq-banner" style="display:none;background:rgba(255,107,53,0.10);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:10px 14px;margin:0 0 10px;font-size:12px;color:var(--accent2);align-items:center;gap:8px;">
+    📉 <span><b>코스닥 MA60 하락 추세</b> · KOSDAQ 종목 신호 신뢰도 낮음 (score -1, 강력매수 제한 적용)</span>
   </div>
 
 
@@ -477,12 +482,12 @@
           </div>
           <div class="guide-item-title" style="margin-bottom:6px;">거래량 증가</div>
           <div class="guide-item-desc">
-            <span style="color:var(--yellow);">거래량급증</span> 4중 검증 구조<br>
+            <span style="color:var(--yellow);">거래량급증</span> 5중 검증 구조<br>
             ① 20일 평균 대비 1.5배 이상<br>
             ② 양봉 (가격 상승 동반)<br>
             ③ 최근 5일 최고 거래량의 80% 이상<br>
             ④ 전일 대비 1.2배 이상<br>
-            + 거래대금 50억 이상 (실전 매매 가능 종목)<br>
+            ⑤ 거래대금 50억 이상 (실전 매매 가능 종목)<br>
             <span style="opacity:0.6;font-size:10px;">하나라도 미충족 시 태그 미표시</span>
           </div>
         </div>
@@ -528,9 +533,11 @@
           <div class="guide-item-desc">
             RSI≤40 +1점 / RSI≤30 추가 +1점 (MA60 유효 시만)<br>
             상승추세(MA20위+MA60 t>t-5>t-10) +1점<br>
-            거래량급증(평균1.5배+양봉) +1점 / RSI골든5% +1점<br>
+            거래량급증(5중 검증) +1점<br>
+            RSI골든5% +1점 <span style="opacity:0.6;font-size:10px;">(RSI ≤ 60일 때만)</span><br>
             눌림목(MA20근처+3일하락+거래량감소) +1점 / 캔들패턴 +1점<br>
             <span style="color:var(--yellow);">MA60 이격도 85~95%</span> → score -1 패널티<br>
+            <span style="color:#ff9800;">코스피/코스닥 MA60 하락장</span> → score -1 패널티<br>
             <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">5점↑ 강력매수</span>
           </div>
         </div>
@@ -763,7 +770,7 @@
           // 코스피 배너 업데이트
           const st2 = await fetch('/api/status');
           const s2 = await st2.json();
-          document.getElementById('market-banner').style.display = s2.kospi_market_up === false ? 'flex' : 'none';
+          updateMarketBanners(s2);
         } else if (s.status==='error'){
           clearInterval(scanInterval); scanInterval=null;
           setScanUI(false);
@@ -771,6 +778,11 @@
         }
       } catch(e){}
     }, 500);
+  }
+
+  function updateMarketBanners(s){
+    document.getElementById('market-banner').style.display  = s.kospi_market_up  === false ? 'flex' : 'none';
+    document.getElementById('kosdaq-banner').style.display  = s.kosdaq_market_up === false ? 'flex' : 'none';
   }
 
   // ── 초기화 ──
@@ -783,10 +795,7 @@
       if (s.is_stale && s.status==='done' && s.count>0){
         document.getElementById('stale-banner').style.display = 'flex';
       }
-      // 코스피 하락장 배너
-      if (s.kospi_market_up === false){
-        document.getElementById('market-banner').style.display = 'flex';
-      }
+      updateMarketBanners(s);
       if (s.status==='scanning'){ setScanUI(true); poll(); }
       else if (s.status==='done' && s.count>0){
         const res = await fetch('/api/results');
@@ -834,15 +843,15 @@
 
   function updateStats(thr){
     document.getElementById('stat-total').textContent = allData.length||'-';
-    // RSI ≤ 30 이면서 강한매수 신호인 종목
+    // RSI ≤ 30 + MA60 유효 (강한매수 실제 조건)
     document.getElementById('stat-strong').textContent =
       allData.filter(s=>s.rsi<=30 && s.rsi_ma60_valid).length||'-';
-    // 매수고려 이상 신호 (매수고려 + 강한매수)
+    // 매수고려 + 강한매수 신호
     const considerCount = allData.filter(s=>['매수고려','강한매수'].includes(s.signal)).length;
     document.getElementById('stat-consider').textContent = considerCount||'-';
-    // 매수유망 이상 신호 (매수유망 + 강력매수)
+    // 매수유망 탭과 동일한 기준: 매수유망 + 강력매수 + 강한매수
     document.getElementById('stat-promising').textContent =
-      allData.filter(s=>['매수유망','강력매수'].includes(s.signal)).length||'-';
+      allData.filter(s=>['매수유망','강력매수','강한매수'].includes(s.signal)).length||'-';
   }
 
   function renderResults(ts){
@@ -877,7 +886,7 @@
     '거래량급증': '20일 평균 1.5배 이상 + 양봉\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
-    'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수 반영\nRSI 60 초과(과열)면 오히려 고점 가능성',
+    'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수/반짝이 반영\nRSI > 60 (과열)이면 참고용 태그만 표시 (+1 미반영)',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
     'MA60이격': 'MA60 이격도 85~95% 구간\nMA60 우상향이지만 현재가가 아직 MA60 위로 충분히 올라오지 못한 상태\n눌림 구간으로 판정 → 점수 -1 패널티 적용',
@@ -899,7 +908,7 @@
     if (s.above_ma60) tags.push(['ind-green','MA60위', false]);
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
     if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
-    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%', true]);
+    if (s.rsi_golden_5) tags.push([s.rsi<=60?'ind-rainbow ind-scored':'ind-blue','RSI골든5%', s.rsi<=60]);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
     if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
     // MA60 패널티
@@ -921,7 +930,7 @@
     else if (s.near_ma20) tags.push(['ind-blue','MA20근접', false]);
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
     if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
-    if (s.rsi_golden_5) tags.push(['ind-rainbow ind-scored','RSI골든5%', true]);
+    if (s.rsi_golden_5) tags.push([s.rsi<=60?'ind-rainbow ind-scored':'ind-blue','RSI골든5%', s.rsi<=60]);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
     if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
     if (s.ma60_penalty) tags.push(['ind-penalty','MA60이격', 'penalty']);
