@@ -78,6 +78,7 @@
   /* ── 모바일 카드 ── */
   .mobile-cards{display:block;}
   .desktop-table{display:none;}
+  .desktop-tabs-wrap{display:none;}
 
   .stock-card{padding:16px;border-bottom:1px solid rgba(42,63,95,0.6);position:relative;}
   .stock-card:last-child{border-bottom:none;}
@@ -236,6 +237,7 @@
     input[type="number"]{width:72px;}
     .mobile-cards{display:none;}
     .desktop-table{display:block;}
+    .desktop-tabs-wrap{display:flex;align-items:center;gap:12px;}
     .table-header{padding:16px 24px;}
     .th-row2{display:none;}
     .th-row1{margin-bottom:0;}
@@ -416,7 +418,7 @@
             <span style="color:var(--yellow);">RSI과매도</span> ≤40 → 매수 고려 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--accent);">RSI골든</span> RSI가 Signal선(9일MA) 상향 돌파<br>
-            <span style="color:#a259ff;">RSI골든5%</span> RSI가 Signal선보다 5% 이상 위<br>
+            <span style="color:#a259ff;">RSI골든5%</span> RSI ≤ 60일 때만 점수반영 (과열구간 제외)<br>
             <span style="opacity:0.6;font-size:10px;">⚠️ MA60 하락 중이면 점수 미반영 (단순 하락 지속 가능)</span>
           </div>
         </div>
@@ -524,7 +526,7 @@
           RSI ≤ <span id="threshold-display">40</span>&nbsp;종목
           <span class="badge" id="result-count">0</span>
         </div>
-        <div class="desktop-table" style="display:flex;align-items:center;gap:12px;">
+        <div class="desktop-table desktop-tabs-wrap">
           <div class="tabs">
             <div class="tab" id="tab-a-d" onclick="setView('all',this)">전체</div>
             <div class="tab active" id="tab-f-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
@@ -823,7 +825,7 @@
     '거래량급증': '20일 평균 거래량 1.5배 이상 + 양봉\n반등하면서 매수세 유입 확인',
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락\n추세 속 일시 조정 → 매수 타이밍',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
-    'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\n돌파 후 상승 모멘텀이 유지되고 있는 상태',
+    'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수 반영\nRSI 60 초과(과열)면 오히려 고점 가능성',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
   };
