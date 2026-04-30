@@ -378,14 +378,18 @@
         <!-- RSI -->
         <div class="guide-item g-rsi">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-            <span class="ind-tag ind-yellow" style="font-size:11px;">RSI과매도</span>
-            <span class="ind-tag ind-red" style="font-size:11px;">RSI극과매도</span>
+            <span class="ind-tag ind-yellow ind-scored" style="font-size:11px;">RSI과매도</span>
+            <span class="ind-tag ind-red ind-scored" style="font-size:11px;">RSI극과매도</span>
+            <span class="ind-tag ind-blue" style="font-size:11px;">RSI골든</span>
+            <span class="ind-tag ind-rainbow" style="font-size:11px;">RSI골든5%</span>
           </div>
           <div class="guide-item-title" style="margin-bottom:6px;">RSI (상대강도지수)</div>
           <div class="guide-item-desc">
             14일간 상승/하락 강도 비교<br>
-            <span style="color:var(--yellow);">RSI과매도</span> ≤40 → 매수 고려<br>
-            <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호<br>
+            <span style="color:var(--yellow);">RSI과매도</span> ≤40 → 매수 고려 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
+            <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
+            <span style="color:var(--accent);">RSI골든</span> RSI가 Signal선(9일MA) 상향 돌파<br>
+            <span style="color:#a259ff;">RSI골든5%</span> RSI가 Signal선보다 5% 이상 위<br>
             <span style="opacity:0.6;font-size:10px;">전일종가 기준, 당일 변동 미반영</span>
           </div>
         </div>
