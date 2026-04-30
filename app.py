@@ -263,14 +263,18 @@ def fetch_stock_data(code, period=14):
         is_bullish = price > open_price  # 양봉 여부
         is_volume_surge = vol_valid and vol_ratio >= 1.5 and is_bullish  # 1.2 → 1.5배로 상향
 
-        # ── 눌림목: MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내 ──
+        # ── 눌림목: MA20 0~10% 위 + 3일 하락 + 하락폭 -10% 이내 + 거래량 감소 ──
         ma20_pct = round((price - ma20) / ma20 * 100, 2) if ma20 > 0 else 0.0
         price_3days_ago = round(float(close.iloc[-4]), 0) if n >= 4 else price
         drop_pct = (price - price_3days_ago) / price_3days_ago * 100 if price_3days_ago > 0 else 0
+        # 거래량 감소: 최근 3일 평균이 20일 평균보다 낮으면 진짜 눌림목
+        vol_3day_avg = float(volume.iloc[-3:].mean()) if n >= 3 else vol_current
+        vol_declining = vol_3day_avg < vol_ma20 if vol_ma20 > 0 else False
         is_pullback = (
             (0 <= ma20_pct <= 10) and
             (price < price_3days_ago) and
-            (drop_pct >= -10)  # 급락(-10% 초과)은 눌림목 아님
+            (drop_pct >= -10) and      # 급락(-10% 초과)은 눌림목 아님
+            vol_declining              # 거래량 감소 = 진짜 눌림목
         )
 
         # ── 캔들패턴 ──
@@ -339,11 +343,11 @@ def fetch_stock_data(code, period=14):
         if is_pullback: score += 1                        # 눌림목 (MA20 근처 + 3일 하락)
         if candle_pattern: score += 1                     # 캔들패턴 (망치형/장악형/장대양봉)
 
-        if score >= 5 and rsi_val <= 60:      signal = '강력매수'
-        elif score >= 3 and rsi_val <= 60:    signal = '매수유망'
-        elif rsi_val <= 30:                   signal = '강한매수'
-        elif rsi_val <= 40:                   signal = '매수고려'
-        else:                                 signal = '관망'
+        if score >= 5 and rsi_val <= 60:              signal = '강력매수'
+        elif score >= 3 and rsi_val <= 60:            signal = '매수유망'
+        elif rsi_val <= 30 and rsi_ma60_valid:        signal = '강한매수'   # MA60 상승 중일 때만
+        elif rsi_val <= 40:                           signal = '매수고려'
+        else:                                         signal = '관망'
 
         result = {
             'name': None, 'code': code, 'market': None,
