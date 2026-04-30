@@ -211,8 +211,8 @@
   .score-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;}
 
   /* 즐겨찾기 */
-  .fav-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:2px 4px;line-height:1;opacity:0.4;transition:opacity 0.2s,transform 0.15s;}
-  .fav-btn:hover{opacity:0.8;}
+  .fav-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;line-height:1;opacity:0.6;transition:opacity 0.2s,transform 0.15s;}
+  .fav-btn:hover{opacity:1;}
   .fav-btn.active{opacity:1;transform:scale(1.15);}
 
   /* 신호 이력 탭 */
@@ -526,22 +526,22 @@
         </div>
         <div class="desktop-table" style="display:flex;align-items:center;gap:12px;">
           <div class="tabs">
+            <div class="tab" id="tab-a-d" onclick="setView('all',this)">전체</div>
             <div class="tab active" id="tab-f-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
             <div class="tab" id="tab-p-d" onclick="setView('promising',this)">매수유망</div>
             <div class="tab" id="tab-fav-d" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
             <div class="tab" id="tab-h-d" onclick="setView('history',this)">📋 이력</div>
-            <div class="tab" id="tab-a-d" onclick="setView('all',this)">전체</div>
           </div>
           <input class="search-input" style="width:160px;" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-desktop">
         </div>
       </div>
       <div class="th-row2">
         <div class="tabs">
+          <div class="tab" id="tab-a-m" onclick="setView('all',this)">전체</div>
           <div class="tab active" id="tab-f-m" onclick="setView('rsi40',this)">RSI≤40</div>
           <div class="tab" id="tab-p-m" onclick="setView('promising',this)">매수유망</div>
           <div class="tab" id="tab-fav-m" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
           <div class="tab" id="tab-h-m" onclick="setView('history',this)">📋 이력</div>
-          <div class="tab" id="tab-a-m" onclick="setView('all',this)">전체</div>
         </div>
         <input class="search-input" type="text" placeholder="검색..." oninput="saveSettings();filterTable()" id="search-mobile">
       </div>
@@ -767,7 +767,7 @@
       if (currentView==='all') return true;
       if (currentView==='promising') return s.score>=3;
       if (currentView==='favorites') return favorites.has(s.code);
-      return s.rsi <= thr; // rsi40 탭
+      return s.rsi <= 40; // rsi40 탭은 항상 40 고정
     });
     sortData(list);
     renderTable(list);
@@ -950,18 +950,18 @@
     // 데스크탑 테이블
     const table = `<div class="desktop-table"><table>
       <thead><tr>
-        <th>#</th><th>종목</th><th>시장</th><th>현재가</th><th>등락률</th>
+        <th>#</th><th>종목</th><th>⭐</th><th>시장</th><th>현재가</th><th>등락률</th>
         <th>RSI(14)</th><th>거래량</th><th>지표</th><th>52주위치</th><th>신호</th>
       </tr></thead>
       <tbody>${data.map((s,i)=>`
         <tr class="${s.score>=5?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div class="stock-name">${s.name}</div>
-              <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')">${favorites.has(s.code)?'⭐':'☆'}</button>
-            </div>
+            <div class="stock-name">${s.name}</div>
             <div class="stock-code">${s.code} · 점수 ${s.score}/6</div>
+          </td>
+          <td style="text-align:center;">
+            <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')" title="즐겨찾기">${favorites.has(s.code)?'⭐':'☆'}</button>
           </td>
           <td><span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span></td>
           <td class="price-cell">${Number(s.price).toLocaleString()}원</td>
