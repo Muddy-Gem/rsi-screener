@@ -388,6 +388,11 @@
     ⚠️ <span>오늘 아직 스캔되지 않은 데이터입니다. 스캔 실행 버튼을 눌러 최신 데이터를 불러오세요.</span>
   </div>
 
+  <!-- 코스피 하락장 경고 -->
+  <div id="market-banner" style="display:none;background:rgba(255,23,68,0.10);border:1px solid rgba(255,23,68,0.3);border-radius:8px;padding:10px 14px;margin:0 0 10px;font-size:12px;color:#ff5252;align-items:center;gap:8px;">
+    📉 <span><b>코스피 MA60 하락 추세</b> · 시장 하락장 감지 — 신호 신뢰도 낮음 (score -1, 강력매수 제한 적용)</span>
+  </div>
+
 
   <!-- 지표 설명 패널 -->
   <div class="guide-panel">
@@ -727,6 +732,10 @@
           renderResults(data.timestamp);
           setScanUI(false);
           document.getElementById('stale-banner').style.display = 'none';
+          // 코스피 배너 업데이트
+          const st2 = await fetch('/api/status');
+          const s2 = await st2.json();
+          document.getElementById('market-banner').style.display = s2.kospi_market_up === false ? 'flex' : 'none';
         }
       } catch(e){}
     }, 500);
@@ -741,6 +750,10 @@
       // 캐시 만료 배너
       if (s.is_stale && s.status==='done' && s.count>0){
         document.getElementById('stale-banner').style.display = 'flex';
+      }
+      // 코스피 하락장 배너
+      if (s.kospi_market_up === false){
+        document.getElementById('market-banner').style.display = 'flex';
       }
       if (s.status==='scanning'){ setScanUI(true); poll(); }
       else if (s.status==='done' && s.count>0){
