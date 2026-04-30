@@ -199,7 +199,6 @@
   tr:last-child td{border-bottom:none;}
   tr:hover td{background:rgba(0,212,255,0.03);}
   tr.row-highlight td{background:rgba(0,230,118,0.04);}
-  tbody tr{cursor:pointer;}
   .stock-name{font-weight:600;color:var(--text-bright);font-size:14px;}
   .stock-code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7896b0;margin-top:1px;}
   .price-cell{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--text-bright);}
@@ -905,13 +904,13 @@
     const cards = `<div class="mobile-cards">${data.map((s,i)=>{
       const dots = Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
       return `
-      <div class="stock-card ${s.score>=5?'highlight':s.rsi<=30?'highlight-strong':''}" onclick="window.open('https://kr.tradingview.com/chart/?symbol=KRX:${s.code}','_blank')" style="cursor:pointer;">
+      <div class="stock-card ${s.score>=5?'highlight':s.rsi<=30?'highlight-strong':''}">
         <div class="card-top">
           <div class="card-left">
             <div class="card-rank">#${i+1} · ${s.code} · <span style="font-family:'IBM Plex Mono',monospace;">${s.market}</span></div>
             <div style="display:flex;align-items:center;gap:6px;">
               <div class="card-name">${s.name}</div>
-              <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="event.stopPropagation();toggleFav('${s.code}','${s.name}')">${favorites.has(s.code)?'⭐':'☆'}</button>
+              <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')">${favorites.has(s.code)?'⭐':'☆'}</button>
             </div>
             <div class="card-meta">
               <span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span>
@@ -955,14 +954,14 @@
         <th>RSI(14)</th><th>거래량</th><th>지표</th><th>52주위치</th><th>신호</th>
       </tr></thead>
       <tbody>${data.map((s,i)=>`
-        <tr class="${s.score>=5?'row-highlight':''}" onclick="window.open('https://kr.tradingview.com/chart/?symbol=KRX:${s.code}','_blank')" style="cursor:pointer;">
+        <tr class="${s.score>=5?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
             <div class="stock-name">${s.name}</div>
             <div class="stock-code">${s.code} · 점수 ${s.score}/6</div>
           </td>
           <td style="text-align:center;">
-            <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="event.stopPropagation();toggleFav('${s.code}','${s.name}')" title="즐겨찾기">${favorites.has(s.code)?'⭐':'☆'}</button>
+            <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')" title="즐겨찾기">${favorites.has(s.code)?'⭐':'☆'}</button>
           </td>
           <td><span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span></td>
           <td class="price-cell">${Number(s.price).toLocaleString()}원</td>
