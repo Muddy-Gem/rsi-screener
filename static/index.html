@@ -210,6 +210,14 @@
   .ind-tags-desktop{display:flex;flex-wrap:wrap;gap:3px;}
   .score-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;}
 
+  /* 즐겨찾기 */
+  .fav-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:2px 4px;line-height:1;opacity:0.4;transition:opacity 0.2s,transform 0.15s;}
+  .fav-btn:hover{opacity:0.8;}
+  .fav-btn.active{opacity:1;transform:scale(1.15);}
+
+  /* 신호 이력 탭 */
+  .history-empty{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:13px;}
+
   /* 반응형 */
   @media(min-width:768px){
     .wrap{padding:24px;}
@@ -373,6 +381,11 @@
     매일 오전 8시 자동 갱신 · 데이터: Yahoo Finance (전일종가 기준)
   </div>
 
+  <!-- 캐시 만료 경고 -->
+  <div id="stale-banner" style="display:none;background:rgba(255,152,0,0.12);border:1px solid rgba(255,152,0,0.35);border-radius:8px;padding:10px 14px;margin:0 0 10px;font-size:12px;color:var(--orange);align-items:center;gap:8px;">
+    ⚠️ <span>오늘 아직 스캔되지 않은 데이터입니다. 스캔 실행 버튼을 눌러 최신 데이터를 불러오세요.</span>
+  </div>
+
 
   <!-- 지표 설명 패널 -->
   <div class="guide-panel">
@@ -515,6 +528,8 @@
           <div class="tabs">
             <div class="tab active" id="tab-f-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
             <div class="tab" id="tab-p-d" onclick="setView('promising',this)">매수유망</div>
+            <div class="tab" id="tab-fav-d" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
+            <div class="tab" id="tab-h-d" onclick="setView('history',this)">📋 이력</div>
             <div class="tab" id="tab-a-d" onclick="setView('all',this)">전체</div>
           </div>
           <input class="search-input" style="width:160px;" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-desktop">
@@ -524,6 +539,8 @@
         <div class="tabs">
           <div class="tab active" id="tab-f-m" onclick="setView('rsi40',this)">RSI≤40</div>
           <div class="tab" id="tab-p-m" onclick="setView('promising',this)">매수유망</div>
+          <div class="tab" id="tab-fav-m" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
+          <div class="tab" id="tab-h-m" onclick="setView('history',this)">📋 이력</div>
           <div class="tab" id="tab-a-m" onclick="setView('all',this)">전체</div>
         </div>
         <input class="search-input" type="text" placeholder="검색..." oninput="saveSettings();filterTable()" id="search-mobile">
@@ -541,7 +558,77 @@
 
 <script>
   let allData=[], currentView='rsi40', scanInterval=null;
+  let favorites = new Set(JSON.parse(localStorage.getItem('rsi_favorites')||'[]'));
+  let signalHistory = JSON.parse(localStorage.getItem('rsi_history')||'[]'); // [{date, code, name, signal, score, rsi}]
   const SETTINGS_KEY='rsi_screener_v2_settings';
+  const MAX_HISTORY = 200; // 최대 이력 200개
+
+  // ── 즐겨찾기 ──
+  function toggleFav(code, name){
+    if (favorites.has(code)) favorites.delete(code);
+    else favorites.add(code);
+    localStorage.setItem('rsi_favorites', JSON.stringify([...favorites]));
+    filterTable();
+  }
+
+  // ── 신호 이력 저장 (스캔 완료 시 강력매수/매수유망 종목 기록) ──
+  function saveHistory(data){
+    const today = new Date().toLocaleDateString('ko-KR');
+    const notable = data.filter(s => s.score >= 3);
+    notable.forEach(s => {
+      // 같은 날 같은 종목 중복 방지
+      const exists = signalHistory.some(h => h.date === today && h.code === s.code);
+      if (!exists) signalHistory.unshift({
+        date: today, code: s.code, name: s.name,
+        signal: s.signal, score: s.score, rsi: s.rsi
+      });
+    });
+    // 최대 200개 유지
+    if (signalHistory.length > MAX_HISTORY) signalHistory = signalHistory.slice(0, MAX_HISTORY);
+    localStorage.setItem('rsi_history', JSON.stringify(signalHistory));
+  }
+
+  function renderHistory(){
+    const el = document.getElementById('table-body');
+    if (!signalHistory.length){
+      el.innerHTML = `<div class="history-empty">📋 아직 이력이 없습니다<br><span style="font-size:11px;opacity:0.5;">스캔 완료 시 매수유망 이상 종목이 자동 기록됩니다</span></div>`;
+      return;
+    }
+    const rows = signalHistory.map(h=>`
+      <div class="stock-card">
+        <div class="card-top">
+          <div class="card-left">
+            <div class="card-rank">${h.date}</div>
+            <div class="card-name">${h.name}</div>
+            <div class="card-meta"><span class="card-code">${h.code}</span>${sigHTML(h.signal)}</div>
+          </div>
+          <div class="card-right">
+            <div class="card-rsi-label">RSI</div>
+            <div class="card-rsi-num" style="color:${rcolor(h.rsi)};font-size:28px;">${h.rsi}</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="card-score-wrap">
+            <div class="card-score-label">종합점수</div>
+            <div class="card-score-dots">
+              ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<h.score?'on':'off'}"></span>`).join('')}
+              <span style="font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/6</span>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+    el.innerHTML = `<div class="mobile-cards">${rows}</div>
+      <div style="text-align:center;padding:10px;">
+        <button onclick="clearHistory()" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;">이력 초기화</button>
+      </div>`;
+  }
+
+  function clearHistory(){
+    if (!confirm('이력을 모두 삭제할까요?')) return;
+    signalHistory = [];
+    localStorage.removeItem('rsi_history');
+    renderHistory();
+  }
 
   // ── 설정 저장/복원 ──
   function saveSettings(){
@@ -576,8 +663,8 @@
   }
 
   function syncTabs(view){
-    const map = {rsi40:'f', promising:'p', all:'a'};
-    ['f','p','a'].forEach(k => {
+    const map = {rsi40:'f', promising:'p', favorites:'fav', history:'h', all:'a'};
+    ['f','p','fav','h','a'].forEach(k => {
       ['m','d'].forEach(s => {
         const el = document.getElementById(`tab-${k}-${s}`);
         if (el) el.classList.toggle('active', map[view]===k);
@@ -633,8 +720,10 @@
           const res = await fetch('/api/results');
           const data = await res.json();
           allData = data.all_data||data.data||[];
+          saveHistory(allData); // 신호 이력 저장
           renderResults(data.timestamp);
           setScanUI(false);
+          document.getElementById('stale-banner').style.display = 'none';
         }
       } catch(e){}
     }, 500);
@@ -646,6 +735,10 @@
     try {
       const r = await fetch('/api/status');
       const s = await r.json();
+      // 캐시 만료 배너
+      if (s.is_stale && s.status==='done' && s.count>0){
+        document.getElementById('stale-banner').style.display = 'flex';
+      }
       if (s.status==='scanning'){ setScanUI(true); poll(); }
       else if (s.status==='done' && s.count>0){
         const res = await fetch('/api/results');
@@ -661,6 +754,8 @@
   }
 
   function filterTable(){
+    if (currentView === 'history') { renderHistory(); return; }
+
     const thr = parseInt(document.getElementById('rsi-threshold').value)||40;
     const mkt = document.getElementById('market-filter').value;
     const q = getSearch();
@@ -671,6 +766,7 @@
       if (!(s.name.toLowerCase().includes(q)||s.code.includes(q))) return false;
       if (currentView==='all') return true;
       if (currentView==='promising') return s.score>=3;
+      if (currentView==='favorites') return favorites.has(s.code);
       return s.rsi <= thr; // rsi40 탭
     });
     sortData(list);
@@ -812,7 +908,10 @@
         <div class="card-top">
           <div class="card-left">
             <div class="card-rank">#${i+1} · ${s.code} · <span style="font-family:'IBM Plex Mono',monospace;">${s.market}</span></div>
-            <div class="card-name">${s.name}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="card-name">${s.name}</div>
+              <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')">${favorites.has(s.code)?'⭐':'☆'}</button>
+            </div>
             <div class="card-meta">
               <span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span>
               ${sigHTML(s.signal)}
