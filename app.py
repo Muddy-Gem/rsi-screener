@@ -256,17 +256,32 @@ def fetch_stock_data(code, period=14):
         if n >= 70:
             ma60_5d  = round(float(ma60_series.iloc[-6]), 0)
             ma60_10d = round(float(ma60_series.iloc[-11]), 0)
-            ma60_rising = (ma60 > ma60_5d) and (ma60_5d > ma60_10d)
+            ma60_trend = (ma60 > ma60_5d) and (ma60_5d > ma60_10d)
         else:
-            ma60_rising = False
+            ma60_trend = False
             ma60_5d = ma60_10d = ma60
 
-        # ── 상승추세: MA20 위 + MA60 우상향 ──
-        is_uptrend = above_ma20 and ma60_rising
+        # ── MA60 이격도 (현재가 / MA60) ──
+        ma60_ratio = round(price / ma60, 3) if ma60 > 0 else 1.0
 
-        # ── RSI + MA60 결합 조건 (잘못된 신호 제거) ──
-        # RSI 과매도이지만 MA60 하락 중이면 단순 하락 지속 → 신호 약화
-        rsi_ma60_valid = ma60_rising  # MA60 상승 중일 때만 RSI 신호 의미 있음
+        # ── RSI+MA60 유효성 판단 ──
+        # 추세 상승 + 이격도 85% 이상 → 유효
+        # 추세 상승 + 이격도 85~95% → 유효하지만 score -1 패널티
+        # 추세 하락 or 이격도 85% 미만 → 무효 (하락장)
+        if ma60_trend and ma60_ratio >= 0.95:
+            rsi_ma60_valid = True
+            ma60_penalty = False
+        elif ma60_trend and ma60_ratio >= 0.85:
+            rsi_ma60_valid = True
+            ma60_penalty = True   # 눌림 구간 → 점수 -1
+        else:
+            rsi_ma60_valid = False
+            ma60_penalty = False
+
+        ma60_rising = ma60_trend  # 기존 필드 호환성 유지
+
+        # ── 상승추세: MA20 위 + MA60 우상향 ──
+        is_uptrend = above_ma20 and ma60_trend
 
         # ── 거래량 (1.5배로 상향 조정) ──
         volume = hist['Volume']
@@ -350,14 +365,14 @@ def fetch_stock_data(code, period=14):
 
         # ── 종합 신호 점수 (0~6점) ──
         score = 0
-        # RSI 과매도 + MA60 상승 중일 때만 점수 부여 (잘못된 신호 제거)
         if rsi_val <= 40 and rsi_ma60_valid: score += 1
-        if rsi_val <= 30 and rsi_ma60_valid: score += 1  # RSI 극과매도 추가점
-        if is_uptrend: score += 1                         # 상승추세 (MA20 위 + MA60 우상향)
-        if is_volume_surge: score += 1                    # 거래량 증가 (평균 1.5배 + 양봉)
-        if rsi_golden_5 and rsi_val <= 60: score += 1    # RSI골든5% - RSI 60 이하에서만 점수 반영 (과열 구간 제외)
-        if is_pullback: score += 1                        # 눌림목 (MA20 근처 + 3일 하락)
-        if candle_pattern: score += 1                     # 캔들패턴 (망치형/장악형/장대양봉)
+        if rsi_val <= 30 and rsi_ma60_valid: score += 1
+        if is_uptrend: score += 1
+        if is_volume_surge: score += 1
+        if rsi_golden_5 and rsi_val <= 60: score += 1
+        if is_pullback: score += 1
+        if candle_pattern: score += 1
+        if ma60_penalty: score = max(0, score - 1)  # MA60 이격 눌림 구간 패널티
 
         if score >= 5 and rsi_val <= 60:              signal = '강력매수'
         elif score >= 3 and rsi_val <= 60:            signal = '매수유망'
@@ -371,7 +386,9 @@ def fetch_stock_data(code, period=14):
             'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_5': rsi_golden_5,
             'ma20': ma20, 'ma60': ma60,
             'above_ma20': above_ma20, 'above_ma60': above_ma60, 'near_ma20': near_ma20,
-            'ma60_rising': ma60_rising, 'ma60_5d': ma60_5d, 'ma60_10d': ma60_10d,
+            'ma60_rising': ma60_rising, 'ma60_trend': ma60_trend,
+            'ma60_5d': ma60_5d, 'ma60_10d': ma60_10d,
+            'ma60_ratio': ma60_ratio, 'ma60_penalty': ma60_penalty,
             'rsi_ma60_valid': rsi_ma60_valid, 'is_uptrend': is_uptrend,
             'vol_ratio': vol_ratio, 'is_bullish': is_bullish, 'is_volume_surge': is_volume_surge,
             'is_pullback': is_pullback, 'ma20_pct': ma20_pct,
