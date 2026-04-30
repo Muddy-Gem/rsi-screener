@@ -116,6 +116,7 @@
   .ind-yellow{background:rgba(255,214,0,0.12);color:var(--yellow);border:1px solid rgba(255,214,0,0.25);}
   .ind-blue{background:rgba(0,212,255,0.12);color:var(--accent);border:1px solid rgba(0,212,255,0.25);}
   .ind-purple{background:rgba(179,136,255,0.12);color:var(--purple);border:1px solid rgba(179,136,255,0.25);}
+  .ind-orange{background:rgba(255,152,0,0.12);color:var(--orange);border:1px solid rgba(255,152,0,0.25);}
   .ind-dim{background:rgba(100,116,139,0.12);color:var(--text-dim);border:1px solid var(--border);}
 
   /* 카드 하단 수치 */
@@ -421,6 +422,36 @@
           </div>
         </div>
 
+        <!-- 스토캐스틱 -->
+        <div class="guide-item" style="border-left:3px solid var(--accent);">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span class="ind-tag ind-blue" style="font-size:11px;">스토골든</span>
+          </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">스토캐스틱 (14,3,3)</div>
+          <div class="guide-item-desc">
+            RSI가 <b>구간</b>을 잡는다면 스토캐스틱은 <b>시점</b>을 잡음<br>
+            <span style="color:var(--accent);">스토골든</span> %K ≤ 20 + %K가 %D 상향 돌파<br>
+            RSI 과매도와 동시에 뜨면 이중 신호<br>
+            <span style="opacity:0.6;font-size:10px;">횡보장에서는 오신호 주의</span>
+          </div>
+        </div>
+
+        <!-- 캔들패턴 -->
+        <div class="guide-item" style="border-left:3px solid var(--orange);">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="ind-tag ind-orange" style="font-size:11px;">망치형</span>
+            <span class="ind-tag ind-orange" style="font-size:11px;">장대양봉</span>
+            <span class="ind-tag ind-orange" style="font-size:11px;">장악형</span>
+          </div>
+          <div class="guide-item-title" style="margin-bottom:6px;">캔들패턴 (반등 확인)</div>
+          <div class="guide-item-desc">
+            <span style="color:var(--orange);">망치형</span> 아래꼬리 > 몸통 2배, 강한 매수 유입<br>
+            <span style="color:var(--orange);">장대양봉</span> 몸통이 캔들의 70%↑, 압도적 매수<br>
+            <span style="color:var(--orange);">장악형</span> 전일 음봉을 오늘 양봉이 완전히 감쌈<br>
+            <span style="opacity:0.6;font-size:10px;">눌림목 + 거래량급증과 함께 뜨면 최강 신호</span>
+          </div>
+        </div>
+
         <!-- 52주 -->
         <div class="guide-item g-52">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
@@ -678,6 +709,10 @@
     '거래량급증': '20일 평균 거래량 1.2배 이상 + 양봉\n반등하면서 매수세 유입 확인',
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락\n추세 속 일시 조정 → 매수 타이밍',
     'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
+    '스토골든': '스토캐스틱 %K ≤ 20 + %K가 %D 상향 돌파\nRSI와 함께 뜨면 이중 과매도 반등 신호',
+    '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
+    '장대양봉': '몸통이 캔들 전체의 70% 이상인 양봉\n강한 상승 전환. 매수세가 압도적',
+    '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
   };
 
   function indTags(s){
@@ -692,6 +727,8 @@
     if (s.is_volume_surge) tags.push(['ind-yellow','거래량급증']);
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
     if (s.macd_golden) tags.push(['ind-green','MACD골든']);
+    if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
+    if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
         <span class="ind-tag ${cls}">${txt}</span>
@@ -707,6 +744,8 @@
     if (s.is_volume_surge) tags.push(['ind-yellow','거래량급증']);
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
     if (s.macd_golden) tags.push(['ind-green','MACD골든']);
+    if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
+    if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
     return tags.map(([cls,txt])=>`
       <span class="tooltip-wrap">
         <span class="ind-tag ${cls}">${txt}</span>
