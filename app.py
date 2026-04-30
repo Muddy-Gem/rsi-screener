@@ -339,11 +339,11 @@ def fetch_stock_data(code, period=14):
         if is_pullback: score += 1                        # 눌림목 (MA20 근처 + 3일 하락)
         if candle_pattern: score += 1                     # 캔들패턴 (망치형/장악형/장대양봉)
 
-        if score >= 5:      signal = '강력매수'
-        elif score >= 3 and rsi_val <= 60: signal = '매수유망'   # RSI 60 이하일 때만 매수유망
-        elif rsi_val <= 30: signal = '강한매수'
-        elif rsi_val <= 40: signal = '매수고려'
-        else:               signal = '관망'
+        if score >= 5 and rsi_val <= 60:      signal = '강력매수'
+        elif score >= 3 and rsi_val <= 60:    signal = '매수유망'
+        elif rsi_val <= 30:                   signal = '강한매수'
+        elif rsi_val <= 40:                   signal = '매수고려'
+        else:                                 signal = '관망'
 
         result = {
             'name': None, 'code': code, 'market': None,
