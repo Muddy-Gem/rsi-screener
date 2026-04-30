@@ -2,13 +2,14 @@ from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import ta
 import threading
 import time
 import json
 import os
 import concurrent.futures
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 app = Flask(__name__, static_folder='static')
@@ -176,6 +177,22 @@ cache = {
 }
 
 scan_lock = threading.Lock()
+progress_lock = threading.Lock()  # progress 카운터 보호용
+
+# IP별 마지막 스캔 시각 (DoS 방지용 cooldown)
+last_scan_by_ip = {}
+SCAN_COOLDOWN = timedelta(minutes=5)
+
+def can_scan(ip):
+    """IP별 쿨다운 체크 (5분에 1회 제한)"""
+    if ip in ('auto', '127.0.0.1'):
+        return True
+    now = datetime.now()
+    last = last_scan_by_ip.get(ip)
+    if last and now - last < SCAN_COOLDOWN:
+        return False
+    last_scan_by_ip[ip] = now
+    return True
 
 def get_stocks():
     return pd.DataFrame(STOCKS)
@@ -196,18 +213,21 @@ def check_kospi_market():
     except:
         return True  # 오류 시 중립(True)으로 처리
 
-def fetch_stock_data(code, period=14):
+def fetch_stock_data(code, market='KOSPI', period=14):
     """종목 데이터 + RSI + 이동평균 + 볼린저밴드 + 52주 고저 계산
     [변경] 볼린저밴드 점수 제거 → 상승추세(+1점), 거래량증가(+1점), 눌림목(태그) 추가
     """
     try:
         hist = None
+        # 코스닥이면 KQ 먼저 시도, 코스피는 KS 먼저 시도
+        primary   = '.KQ' if market == 'KOSDAQ' else '.KS'
+        secondary = '.KS' if market == 'KOSDAQ' else '.KQ'
         for attempt in range(2):  # 실패 시 1회 재시도
             try:
-                stock = yf.Ticker(f"{code}.KS")
+                stock = yf.Ticker(f"{code}{primary}")
                 hist = stock.history(period="1y", timeout=10)
                 if hist.empty:
-                    stock = yf.Ticker(f"{code}.KQ")
+                    stock = yf.Ticker(f"{code}{secondary}")
                     hist = stock.history(period="1y", timeout=10)
                 if not hist.empty:
                     break
@@ -417,7 +437,6 @@ def fetch_stock_data(code, period=14):
             'score': score, 'signal': signal,
         }
         # numpy 타입 → Python 기본 타입 변환 (JSON 직렬화 오류 방지)
-        import numpy as np
         def to_python(v):
             if isinstance(v, (np.bool_)):    return bool(v)
             if isinstance(v, (np.integer)):  return int(v)
@@ -455,60 +474,73 @@ def run_scan(stocks_df, requester_ip):
     cache['total'] = len(stocks_df)
     cache['error'] = None
 
-    # ── 코스피 시장 상태 체크 ──
-    kospi_up = check_kospi_market()
-    cache['kospi_market_up'] = kospi_up
-
-    results = []
-    rows = list(stocks_df.iterrows())
-
-    def fetch_one(row):
-        _, r = row
-        code = str(r['code']).zfill(6)
-        res = fetch_stock_data(code)
-        cache['progress'] += 1
-        if res:
-            res['name'] = r['name']
-            res['market'] = r['market']
-
-            # ── 시장 필터 적용 ──
-            if not kospi_up:
-                res['score'] = max(0, res['score'] - 1)  # 점수 -1
-                # 강력매수 → 매수유망으로 등급 제한
-                if res['signal'] == '강력매수':
-                    res['signal'] = '매수유망'
-        return res
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
-        futures = {ex.submit(fetch_one, row): row for row in rows}
-        for fut in concurrent.futures.as_completed(futures):
-            res = fut.result()
-            if res:
-                results.append(res)
-
-    results.sort(key=lambda x: x['rsi'])
-    cache['all_data'] = results
-    cache['data'] = [r for r in results if r['rsi'] <= 40]
-    cache['status'] = 'done'
-    cache['timestamp'] = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
-    cache['progress'] = cache['total']
-
-    save_cache()
     try:
-        scan_lock.release()
-    except RuntimeError:
-        pass
+        # ── 코스피 시장 상태 체크 ──
+        kospi_up = check_kospi_market()
+        cache['kospi_market_up'] = kospi_up
+
+        results = []
+        rows = list(stocks_df.iterrows())
+
+        def fetch_one(row):
+            _, r = row
+            code = str(r['code']).zfill(6)
+            res = fetch_stock_data(code, market=r.get('market', 'KOSPI'))
+            with progress_lock:
+                cache['progress'] += 1
+            if res:
+                res['name'] = r['name']
+                res['market'] = r['market']
+
+                # ── 시장 필터 적용 ──
+                if not kospi_up:
+                    res['score'] = max(0, res['score'] - 1)  # 점수 -1
+                    # 강력매수 → 매수유망으로 등급 제한
+                    if res['signal'] == '강력매수':
+                        res['signal'] = '매수유망'
+            return res
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
+            futures = {ex.submit(fetch_one, row): row for row in rows}
+            for fut in concurrent.futures.as_completed(futures):
+                res = fut.result()
+                if res:
+                    results.append(res)
+
+        results.sort(key=lambda x: x['rsi'])
+        cache['all_data'] = results
+        cache['data'] = [r for r in results if r['rsi'] <= 40]
+        cache['status'] = 'done'
+        cache['timestamp'] = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
+        cache['progress'] = cache['total']
+
+        save_cache()
+
+    except Exception as e:
+        cache['status'] = 'error'
+        cache['error'] = str(e)
+        print(f"스캔 오류: {e}")
+
+    finally:
+        try:
+            scan_lock.release()
+        except RuntimeError:
+            pass
 
 def auto_scan_scheduler():
+    """매일 오전 8시 자동 스캔 — 1초 간격으로 정각을 정밀하게 감지"""
+    last_triggered_date = None
     while True:
-        now = datetime.now()
-        if now.hour == 8 and now.minute == 0:
+        now = datetime.now(pytz.timezone('Asia/Seoul'))
+        today = now.date()
+        if now.hour == 8 and now.minute == 0 and last_triggered_date != today:
+            last_triggered_date = today
             print(f"[{now}] 자동 스캔 시작")
             if scan_lock.acquire(blocking=False):
                 t = threading.Thread(target=run_scan, args=(get_stocks(), 'auto'))
                 t.daemon = True
                 t.start()
-        time.sleep(60)
+        time.sleep(1)
 
 @app.route('/')
 def index():
@@ -562,18 +594,28 @@ def get_results():
 
 @app.route('/api/quick-scan', methods=['GET','POST'])
 def quick_scan():
+    ip = request.remote_addr
+    if not can_scan(ip):
+        remaining = SCAN_COOLDOWN - (datetime.now() - last_scan_by_ip.get(ip, datetime.min))
+        mins = int(remaining.total_seconds() / 60) + 1
+        return jsonify({'message': f'너무 자주 스캔하고 있습니다. {mins}분 후 다시 시도하세요.', 'status': 'cooldown'})
     if not scan_lock.acquire(blocking=False):
         return jsonify({'message': '다른 사용자가 스캔 중입니다. 잠시 후 결과가 표시됩니다.', 'status': 'scanning', 'total': cache['total'], 'progress': cache['progress']})
-    t = threading.Thread(target=run_scan, args=(get_stocks(), request.remote_addr))
+    t = threading.Thread(target=run_scan, args=(get_stocks(), ip))
     t.daemon = True
     t.start()
     return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(STOCKS)})
 
 @app.route('/api/scan', methods=['GET','POST'])
 def full_scan():
+    ip = request.remote_addr
+    if not can_scan(ip):
+        remaining = SCAN_COOLDOWN - (datetime.now() - last_scan_by_ip.get(ip, datetime.min))
+        mins = int(remaining.total_seconds() / 60) + 1
+        return jsonify({'message': f'너무 자주 스캔하고 있습니다. {mins}분 후 다시 시도하세요.', 'status': 'cooldown'})
     if not scan_lock.acquire(blocking=False):
         return jsonify({'message': '다른 사용자가 스캔 중입니다.', 'status': 'scanning', 'total': cache['total'], 'progress': cache['progress']})
-    t = threading.Thread(target=run_scan, args=(get_stocks(), request.remote_addr))
+    t = threading.Thread(target=run_scan, args=(get_stocks(), ip))
     t.daemon = True
     t.start()
     return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(STOCKS)})
