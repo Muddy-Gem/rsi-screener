@@ -738,6 +738,8 @@
 
   function indTagsDesktop(s){
     const tags = [];
+    if (s.rsi<=30) tags.push(['ind-red','RSI극과매도']);
+    else if (s.rsi<=40) tags.push(['ind-yellow','RSI과매도']);
     if (s.is_uptrend) tags.push(['ind-green','상승추세']);
     else if (s.above_ma20) tags.push(['ind-blue','MA20위']);
     else if (s.near_ma20) tags.push(['ind-blue','MA20근접']);
