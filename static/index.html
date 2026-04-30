@@ -490,7 +490,7 @@
             <span class="ind-tag signal-good" style="font-size:11px;">매수유망</span>
             <span class="ind-tag signal-top" style="font-size:11px;">강력매수</span>
           </div>
-          <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~5점)</div>
+          <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~6점)</div>
           <div class="guide-item-desc">
             RSI≤40 +1점 / RSI≤30 추가 +1점<br>
             상승추세(MA20위+MA60우상향) +1점<br>
@@ -832,7 +832,7 @@
         <div class="card-footer">
           <div class="card-score-wrap">
             <div class="card-score-label">종합점수</div>
-            <div class="card-score-dots">${dots}<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/5</span></div>
+            <div class="card-score-dots">${dots}<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/6</span></div>
           </div>
           <div class="card-stats">
             <div class="card-stat">
@@ -859,7 +859,7 @@
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
             <div class="stock-name">${s.name}</div>
-            <div class="stock-code">${s.code} · 점수 ${s.score}/5</div>
+            <div class="stock-code">${s.code} · 점수 ${s.score}/6</div>
           </td>
           <td><span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span></td>
           <td class="price-cell">${Number(s.price).toLocaleString()}원</td>
