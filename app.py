@@ -343,7 +343,7 @@ def fetch_stock_data(code, period=14):
         elif rsi_val <= 40: signal = '매수고려'
         else:            signal = '관망'
 
-        return {
+        result = {
             'name': None, 'code': code, 'market': None,
             'price': price, 'change_pct': change,
             'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_5': rsi_golden_5,
@@ -360,6 +360,14 @@ def fetch_stock_data(code, period=14):
             'pct_from_low': pct_from_low, 'pct_from_high': pct_from_high,
             'score': score, 'signal': signal,
         }
+        # numpy 타입 → Python 기본 타입 변환 (JSON 직렬화 오류 방지)
+        import numpy as np
+        def to_python(v):
+            if isinstance(v, (np.bool_)):    return bool(v)
+            if isinstance(v, (np.integer)):  return int(v)
+            if isinstance(v, (np.floating)): return float(v)
+            return v
+        return {k: to_python(v) for k, v in result.items()}
     except Exception as e:
         return None
 
