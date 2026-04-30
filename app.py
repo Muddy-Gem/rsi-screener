@@ -172,13 +172,29 @@ CACHE_FILE = 'scan_cache.json'
 cache = {
     'data': [], 'all_data': [], 'timestamp': None,
     'status': 'idle', 'progress': 0, 'total': 0,
-    'error': None
+    'error': None, 'kospi_market_up': None  # 코스피 MA60 우상향 여부
 }
 
 scan_lock = threading.Lock()
 
 def get_stocks():
     return pd.DataFrame(STOCKS)
+
+def check_kospi_market():
+    """코스피 MA60 우상향 여부 확인 (t > t-5 > t-10)"""
+    try:
+        kospi = yf.Ticker('^KS11')
+        hist = kospi.history(period='6mo', timeout=10)
+        if hist.empty or len(hist) < 70:
+            return True  # 데이터 없으면 중립(True)으로 처리
+        close = hist['Close']
+        ma60 = close.rolling(60).mean()
+        ma60_now  = float(ma60.iloc[-1])
+        ma60_5d   = float(ma60.iloc[-6])
+        ma60_10d  = float(ma60.iloc[-11])
+        return (ma60_now > ma60_5d) and (ma60_5d > ma60_10d)
+    except:
+        return True  # 오류 시 중립(True)으로 처리
 
 def fetch_stock_data(code, period=14):
     """종목 데이터 + RSI + 이동평균 + 볼린저밴드 + 52주 고저 계산
@@ -405,6 +421,10 @@ def run_scan(stocks_df, requester_ip):
     cache['total'] = len(stocks_df)
     cache['error'] = None
 
+    # ── 코스피 시장 상태 체크 ──
+    kospi_up = check_kospi_market()
+    cache['kospi_market_up'] = kospi_up
+
     results = []
     rows = list(stocks_df.iterrows())
 
@@ -416,6 +436,13 @@ def run_scan(stocks_df, requester_ip):
         if res:
             res['name'] = r['name']
             res['market'] = r['market']
+
+            # ── 시장 필터 적용 ──
+            if not kospi_up:
+                res['score'] = max(0, res['score'] - 1)  # 점수 -1
+                # 강력매수 → 매수유망으로 등급 제한
+                if res['signal'] == '강력매수':
+                    res['signal'] = '매수유망'
         return res
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
@@ -472,6 +499,7 @@ def get_status():
         'total': cache['total'], 'timestamp': cache['timestamp'],
         'count': len(cache['data']), 'error': cache['error'],
         'is_stale': is_stale,
+        'kospi_market_up': cache['kospi_market_up'],
     })
 
 # ── 즐겨찾기 (서버 메모리 저장, 재시작 시 초기화) ──
