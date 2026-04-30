@@ -424,7 +424,7 @@
             <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--accent);">RSI골든</span> RSI가 Signal선(9일MA) 상향 돌파<br>
             <span style="color:#a259ff;">RSI골든5%</span> RSI ≤ 60일 때만 점수반영 (과열구간 제외)<br>
-            <span style="opacity:0.6;font-size:10px;">⚠️ MA60 하락 중이면 점수 미반영 (단순 하락 지속 가능)</span>
+            <span style="opacity:0.6;font-size:10px;">⚠️ MA60 하락 또는 이격도 85% 미만이면 점수 미반영 (관망)</span>
           </div>
         </div>
 
@@ -457,6 +457,12 @@
             <span style="color:var(--text-dim);">눌림목</span> MA20 0~10% 위 + 3일 하락<br>
             + 거래량 감소 (진짜 눌림목 확인)<br>
             <span style="opacity:0.6;font-size:10px;">추세 속 일시 조정 → 매수 타이밍</span>
+            <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;">
+              📐 <b>MA60 이격도 (현재가 / MA60)</b><br>
+              <span style="color:var(--green);">≥ 95%</span> 정상 상승 → 신호 정상 반영<br>
+              <span style="color:var(--yellow);">85~95%</span> 눌림 구간 → score -1 패널티<br>
+              <span style="color:#ff5252;">< 85%</span> 하락장 → RSI 신호 무효 (관망)
+            </div>
           </div>
         </div>
 
@@ -513,10 +519,11 @@
           </div>
           <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~6점)</div>
           <div class="guide-item-desc">
-            RSI≤40 +1점 / RSI≤30 추가 +1점 (MA60 상승 중일 때만)<br>
+            RSI≤40 +1점 / RSI≤30 추가 +1점 (MA60 유효 시만)<br>
             상승추세(MA20위+MA60 t>t-5>t-10) +1점<br>
             거래량급증(평균1.5배+양봉) +1점 / RSI골든5% +1점<br>
-            눌림목(MA20근처+3일하락) +1점 / 캔들패턴 +1점<br>
+            눌림목(MA20근처+3일하락+거래량감소) +1점 / 캔들패턴 +1점<br>
+            <span style="color:var(--yellow);">MA60 이격도 85~95%</span> → score -1 패널티<br>
             <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">5점↑ 강력매수</span>
           </div>
         </div>
