@@ -957,7 +957,10 @@
         <tr class="${s.score>=5?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
-            <div class="stock-name">${s.name}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="stock-name">${s.name}</div>
+              <button class="fav-btn ${favorites.has(s.code)?'active':''}" onclick="toggleFav('${s.code}','${s.name}')">${favorites.has(s.code)?'⭐':'☆'}</button>
+            </div>
             <div class="stock-code">${s.code} · 점수 ${s.score}/6</div>
           </td>
           <td><span class="market-badge market-${s.market.toLowerCase()}">${s.market}</span></td>
