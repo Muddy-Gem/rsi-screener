@@ -236,17 +236,23 @@ def fetch_stock_data(code, period=14):
         above_ma60 = price >= ma60 if n >= 60 else False
         near_ma20 = abs(price - ma20) / ma20 <= 0.03 if n >= 20 else False
 
-        # ── MA60 우상향 (5일 전 MA60 대비 현재 MA60이 높으면 우상향) ──
-        if n >= 65:
-            ma60_5days_ago = round(float(ma60_series.iloc[-6]), 0)
-            ma60_rising = ma60 > ma60_5days_ago
+        # ── MA60 우상향: t > t-5 > t-10 (3포인트 비교로 안정성 강화) ──
+        if n >= 70:
+            ma60_5d  = round(float(ma60_series.iloc[-6]), 0)
+            ma60_10d = round(float(ma60_series.iloc[-11]), 0)
+            ma60_rising = (ma60 > ma60_5d) and (ma60_5d > ma60_10d)
         else:
             ma60_rising = False
+            ma60_5d = ma60_10d = ma60
 
         # ── 상승추세: MA20 위 + MA60 우상향 ──
         is_uptrend = above_ma20 and ma60_rising
 
-        # ── 거래량 ──
+        # ── RSI + MA60 결합 조건 (잘못된 신호 제거) ──
+        # RSI 과매도이지만 MA60 하락 중이면 단순 하락 지속 → 신호 약화
+        rsi_ma60_valid = ma60_rising  # MA60 상승 중일 때만 RSI 신호 의미 있음
+
+        # ── 거래량 (1.5배로 상향 조정) ──
         volume = hist['Volume']
         vol_current = float(volume.iloc[-1])
         vol_ma20 = float(volume.rolling(min(20,n)).mean().iloc[-1]) if n >= 20 else vol_current
@@ -255,7 +261,7 @@ def fetch_stock_data(code, period=14):
         vol_ratio = round(vol_current / vol_ma20, 2) if vol_ma20 > 0 else 0.0
         open_price = float(hist['Open'].iloc[-1])
         is_bullish = price > open_price  # 양봉 여부
-        is_volume_surge = vol_valid and vol_ratio >= 1.2 and is_bullish
+        is_volume_surge = vol_valid and vol_ratio >= 1.5 and is_bullish  # 1.2 → 1.5배로 상향
 
         # ── 눌림목: MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내 ──
         ma20_pct = round((price - ma20) / ma20 * 100, 2) if ma20 > 0 else 0.0
@@ -324,13 +330,14 @@ def fetch_stock_data(code, period=14):
 
         # ── 종합 신호 점수 (0~6점) ──
         score = 0
-        if rsi_val <= 40: score += 1
-        if rsi_val <= 30: score += 1      # RSI 극과매도 추가점
-        if is_uptrend: score += 1         # 상승추세 (MA20 위 + MA60 우상향)
-        if is_volume_surge: score += 1    # 거래량 증가 (평균 1.2배 + 양봉)
-        if rsi_golden_5: score += 1       # RSI Signal선 5% 이상 위
-        if is_pullback: score += 1        # 눌림목 (MA20 근처 + 3일 하락)
-        if candle_pattern: score += 1     # 캔들패턴 (망치형/장악형/장대양봉)
+        # RSI 과매도 + MA60 상승 중일 때만 점수 부여 (잘못된 신호 제거)
+        if rsi_val <= 40 and rsi_ma60_valid: score += 1
+        if rsi_val <= 30 and rsi_ma60_valid: score += 1  # RSI 극과매도 추가점
+        if is_uptrend: score += 1                         # 상승추세 (MA20 위 + MA60 우상향)
+        if is_volume_surge: score += 1                    # 거래량 증가 (평균 1.5배 + 양봉)
+        if rsi_golden_5: score += 1                       # RSI Signal선 5% 이상 위
+        if is_pullback: score += 1                        # 눌림목 (MA20 근처 + 3일 하락)
+        if candle_pattern: score += 1                     # 캔들패턴 (망치형/장악형/장대양봉)
 
         if score >= 5:   signal = '강력매수'
         elif score >= 3: signal = '매수유망'
@@ -344,7 +351,8 @@ def fetch_stock_data(code, period=14):
             'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_5': rsi_golden_5,
             'ma20': ma20, 'ma60': ma60,
             'above_ma20': above_ma20, 'above_ma60': above_ma60, 'near_ma20': near_ma20,
-            'ma60_rising': ma60_rising, 'is_uptrend': is_uptrend,
+            'ma60_rising': ma60_rising, 'ma60_5d': ma60_5d, 'ma60_10d': ma60_10d,
+            'rsi_ma60_valid': rsi_ma60_valid, 'is_uptrend': is_uptrend,
             'vol_ratio': vol_ratio, 'is_bullish': is_bullish, 'is_volume_surge': is_volume_surge,
             'is_pullback': is_pullback, 'ma20_pct': ma20_pct,
             'candle_pattern': candle_pattern,
