@@ -362,7 +362,7 @@ def fetch_stock_data(code, period=14):
         if score >= 5 and rsi_val <= 60:              signal = '강력매수'
         elif score >= 3 and rsi_val <= 60:            signal = '매수유망'
         elif rsi_val <= 30 and rsi_ma60_valid:        signal = '강한매수'   # MA60 상승 중일 때만
-        elif rsi_val <= 40:                           signal = '매수고려'
+        elif rsi_val <= 40 and rsi_ma60_valid:        signal = '매수고려'   # MA60 상승 중일 때만
         else:                                         signal = '관망'
 
         result = {
