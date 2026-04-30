@@ -283,16 +283,31 @@ def fetch_stock_data(code, period=14):
         # ── 상승추세: MA20 위 + MA60 우상향 ──
         is_uptrend = above_ma20 and ma60_trend
 
-        # ── 거래량 (1.5배로 상향 조정) ──
+        # ── 거래량 (4중 필터 + 거래대금) ──
         volume = hist['Volume']
         vol_current = float(volume.iloc[-1])
-        vol_ma20 = float(volume.rolling(min(20,n)).mean().iloc[-1]) if n >= 20 else vol_current
-        # 거래량 이상값 필터: 0이거나 평균의 20배 초과면 신뢰 불가
+        vol_prev    = float(volume.iloc[-2])
+        vol_ma20    = float(volume.rolling(min(20,n)).mean().iloc[-1]) if n >= 20 else vol_current
+        vol_5day_max = float(volume.iloc[-6:-1].max()) if n >= 6 else vol_current
+
+        # 거래대금 (현재가 × 거래량) - 50억 이상만 신뢰
+        trade_value = price * vol_current
+        is_liquid = trade_value >= 5_000_000_000
+
+        # 이상값 필터: 0이거나 평균의 20배 초과면 신뢰 불가
         vol_valid = vol_ma20 > 0 and vol_current < vol_ma20 * 20
         vol_ratio = round(vol_current / vol_ma20, 2) if vol_ma20 > 0 else 0.0
         open_price = float(hist['Open'].iloc[-1])
         is_bullish = price > open_price  # 양봉 여부
-        is_volume_surge = vol_valid and vol_ratio >= 1.5 and is_bullish  # 1.2 → 1.5배로 상향
+
+        is_volume_surge = (
+            vol_valid and
+            vol_ratio >= 1.5 and                      # 1. 20일 평균 대비 1.5배 이상
+            is_bullish and                            # 2. 양봉 (가격 상승 동반)
+            vol_current >= vol_5day_max * 0.8 and    # 3. 최근 5일 최고 거래량의 80% 이상
+            vol_current > vol_prev * 1.2 and         # 4. 전일 대비 1.2배 이상
+            is_liquid                                 # 5. 거래대금 50억 이상
+        )
 
         # ── 눌림목: MA20 0~10% 위 + 3일 하락 + 하락폭 -10% 이내 + 거래량 감소 ──
         ma20_pct = round((price - ma20) / ma20 * 100, 2) if ma20 > 0 else 0.0
@@ -391,6 +406,8 @@ def fetch_stock_data(code, period=14):
             'ma60_ratio': ma60_ratio, 'ma60_penalty': ma60_penalty,
             'rsi_ma60_valid': rsi_ma60_valid, 'is_uptrend': is_uptrend,
             'vol_ratio': vol_ratio, 'is_bullish': is_bullish, 'is_volume_surge': is_volume_surge,
+            'trade_value': round(trade_value / 100000000, 1),  # 억원 단위
+            'is_liquid': is_liquid,
             'is_pullback': is_pullback, 'ma20_pct': ma20_pct,
             'candle_pattern': candle_pattern,
             'bb_upper': bb_upper, 'bb_lower': bb_lower, 'bb_mid': bb_mid, 'bb_pct': bb_pct,
