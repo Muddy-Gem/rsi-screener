@@ -453,20 +453,6 @@
           </div>
         </div>
 
-        <!-- 스토캐스틱 -->
-        <div class="guide-item" style="border-left:3px solid var(--accent);">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-            <span class="ind-tag ind-blue" style="font-size:11px;">스토골든</span>
-          </div>
-          <div class="guide-item-title" style="margin-bottom:6px;">스토캐스틱 (14,3,3)</div>
-          <div class="guide-item-desc">
-            RSI가 <b>구간</b>을 잡는다면 스토캐스틱은 <b>시점</b>을 잡음<br>
-            <span style="color:var(--accent);">스토골든</span> %K ≤ 20 + %K가 %D 상향 돌파<br>
-            RSI 과매도와 동시에 뜨면 이중 신호<br>
-            <span style="opacity:0.6;font-size:10px;">횡보장에서는 오신호 주의</span>
-          </div>
-        </div>
-
         <!-- 캔들패턴 -->
         <div class="guide-item" style="border-left:3px solid var(--orange);">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
@@ -742,7 +728,6 @@
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\n돌파 후 상승 모멘텀이 유지되고 있는 상태',
     'MACD골든': 'MACD 골든크로스 발생\n단기 상승 전환 신호',
-    '스토골든': '스토캐스틱 %K ≤ 20 + %K가 %D 상향 돌파\nRSI와 함께 뜨면 이중 과매도 반등 신호',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
   };
@@ -759,7 +744,6 @@
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
     if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
-    if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
     if (s.rsi_golden_5) tags.push(['ind-rainbow','RSI골든5%']);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
     if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
@@ -780,7 +764,6 @@
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증']);
     if (s.is_pullback) tags.push(['ind-dim','눌림목']);
     if (s.macd_golden) tags.push(['ind-green ind-scored','MACD골든']);
-    if (s.stoch_golden) tags.push(['ind-blue','스토골든']);
     if (s.rsi_golden_5) tags.push(['ind-rainbow','RSI골든5%']);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든']);
     if (s.candle_pattern) tags.push(['ind-orange', s.candle_pattern]);
