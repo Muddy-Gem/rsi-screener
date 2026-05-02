@@ -432,6 +432,7 @@
             <span style="color:var(--yellow);">RSI과매도</span> ≤40 → 매수 고려 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--accent);">RSI골든</span> RSI가 Signal선(9일MA) 상향 돌파<br>
+            <span style="color:var(--purple);">RSI골든지속</span> 골든크로스 후 1~2일 유지 → 점수반영 ✨<br>
             <span style="color:#a259ff;">RSI골든5%</span> RSI ≤ 60일 때만 점수반영 (과열구간 제외)<br>
             <span style="opacity:0.6;font-size:10px;">⚠️ MA60 하락 또는 이격도 85% 미만이면 점수 미반영 (관망)</span>
           </div>
@@ -464,8 +465,8 @@
             <span style="color:var(--green);">상승추세</span> MA20 위 + MA60 우상향<br>
             MA60 우상향: MA60(현재) > MA60(5일전) > MA60(10일전)<br>
             <span style="color:var(--text-dim);">눌림목</span> MA20 0~10% 위 + 3일 하락<br>
-            + 거래량 감소 (진짜 눌림목 확인)<br>
-            <span style="opacity:0.6;font-size:10px;">추세 속 일시 조정 → 매수 타이밍</span>
+            + 거래량 감소 + <b>당일 양봉</b> (조정 마무리 확인)<br>
+            <span style="opacity:0.6;font-size:10px;">추세 속 일시 조정 종료 신호 → 매수 타이밍</span>
             <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;">
               📐 <b>MA60 이격도 (현재가 / MA60)</b><br>
               <span style="color:var(--green);">≥ 95%</span> 정상 상승 → 신호 정상 반영<br>
@@ -884,6 +885,7 @@
     '거래량급증': '20일 평균 1.5배 이상 + 양봉\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
     '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
+    'RSI골든지속': 'RSI 골든크로스 발생 후 1~2일 유지 중\n크로스 직후 모멘텀 지속 구간 → 추세 전환 초입\nRSI ≤ 60일 때만 점수 반영',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수/반짝이 반영\nRSI > 60 (과열)이면 참고용 태그만 표시 (+1 미반영)',
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
@@ -908,6 +910,7 @@
     if (!isDesktop && s.above_ma60) tags.push(['ind-green','MA60위', false]);
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
     if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
+    if (s.rsi_golden_keep) tags.push([s.rsi<=60?'ind-purple ind-scored':'ind-blue','RSI골든지속', s.rsi<=60]);
     if (s.rsi_golden_5) tags.push([s.rsi<=60?'ind-rainbow ind-scored':'ind-blue','RSI골든5%', s.rsi<=60]);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
     if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
