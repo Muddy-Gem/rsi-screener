@@ -455,12 +455,10 @@ def fetch_stock_data(code, market='KOSPI'):
         if rsi_ma60_valid and ma60_ratio < 0.90:      score = max(0, score - 1)
 
         # [수정2] 강력매수 기준 5점으로 상향 (7개 조건 중 71% 충족 요구)
-        # 우선순위: 강력매수 > 매수유망 > 강한매수 > 매수고려 > 관망
-        # RSI≤30이어도 score≥4면 매수유망으로 표시 (점수 조건이 더 강한 신호)
+        # 우선순위: 강력매수 > RSI바닥 > 매수고려 > 관망
         if score >= 4 and rsi_val <= 60:              signal = '강력매수'
-        elif score >= 3 and rsi_val <= 45:            signal = '매수유망'
-        elif rsi_val <= 30 and rsi_ma60_valid:        signal = '강한매수'   # score 미달 + 극과매도
-        elif rsi_val <= 40 and rsi_ma60_valid:        signal = '매수고려'   # score 미달 + 과매도
+        elif rsi_val <= 30 and rsi_ma60_valid:        signal = 'RSI바닥'    # 극과매도
+        elif rsi_val <= 40 and rsi_ma60_valid:        signal = '매수고려'
         else:                                         signal = '관망'
 
         result = {
@@ -567,8 +565,7 @@ def run_scan(stocks_df, requester_ip):
                     s = res['score']
                     rsi = res['rsi']
                     if s >= 4 and rsi <= 60:             res['signal'] = '강력매수'
-                    elif s >= 3 and rsi <= 45:           res['signal'] = '매수유망'
-                    elif rsi <= 30 and res['rsi_ma60_valid']: res['signal'] = '강한매수'
+                    elif rsi <= 30 and res['rsi_ma60_valid']: res['signal'] = 'RSI바닥'
                     elif rsi <= 40 and res['rsi_ma60_valid']: res['signal'] = '매수고려'
                     else:                                res['signal'] = '관망'
                 else:
