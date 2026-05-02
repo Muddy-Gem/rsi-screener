@@ -645,6 +645,7 @@
               ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<h.score?'on':'off'}"></span>`).join('')}
               <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/6</span>
               ${h.ma60_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">MA60이격 -1</span>` : ''}
+              ${h.market_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">${h.market==='KOSPI'?'코스피':'코스닥'}하락 -1</span>` : ''}
             </div>
             ${h.price ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);display:flex;gap:10px;margin-top:5px;">
               <span>₩${h.price.toLocaleString()}</span>
@@ -887,6 +888,8 @@
     '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
     'MA60이격': 'MA60 이격도 85~95% 구간\nMA60 우상향이지만 현재가가 아직 MA60 위로 충분히 올라오지 못한 상태\n눌림 구간으로 판정 → 점수 -1 패널티 적용',
+    '코스피하락장': '코스피(^KS11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -1, 강력매수 등급 제한\nKOSPI 종목에만 적용',
+    '코스닥하락장': '코스닥(^KQ11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -1, 강력매수 등급 제한\nKOSDAQ 종목에만 적용',
   };
 
   // pip = +1 배지, penalty = MA60 패널티 태그 여부
@@ -909,6 +912,7 @@
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
     if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
     if (s.ma60_penalty) tags.push(['ind-penalty','MA60이격', 'penalty']);
+    if (s.market_penalty) tags.push(['ind-penalty', s.market==='KOSPI'?'코스피하락장':'코스닥하락장', 'penalty']);
     return tags.map(([cls,txt,scored])=>`
       <span class="tooltip-wrap">
         <span class="ind-tag ${cls}">${txt}${scored===true?pip():scored==='penalty'?pipMinus():''}</span>
@@ -986,6 +990,7 @@
               ${dots}
               <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/6</span>
               ${s.ma60_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">MA60이격 -1</span>` : ''}
+              ${s.market_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">${s.market==='KOSPI'?'코스피':'코스닥'}하락 -1</span>` : ''}
             </div>
           </div>
           <div class="card-stats">
@@ -1019,6 +1024,7 @@
               ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('')}
               <span style="font-size:10px;color:var(--text-dim);">${s.score}/6</span>
               ${s.ma60_penalty ? `<span class="score-pip score-pip-minus">-1</span>` : ''}
+              ${s.market_penalty ? `<span class="score-pip score-pip-minus">시장-1</span>` : ''}
             </div>
           </td>
           <td style="text-align:center;">
