@@ -394,12 +394,12 @@
 
   <!-- 코스피 하락장 경고 -->
   <div id="market-banner" style="display:none;background:rgba(255,23,68,0.10);border:1px solid rgba(255,23,68,0.3);border-radius:8px;padding:10px 14px;margin:0 0 10px;font-size:12px;color:#ff5252;align-items:center;gap:8px;">
-    📉 <span><b>코스피 MA60 하락 추세</b> · KOSPI 종목 신호 신뢰도 낮음 (score -1, 강력매수 제한 적용)</span>
+    📉 <span><b>코스피 MA60 하락 추세</b> · KOSPI 종목 신호 신뢰도 낮음 (score -2, 강력매수 제한 적용)</span>
   </div>
 
   <!-- 코스닥 하락장 경고 -->
   <div id="kosdaq-banner" style="display:none;background:rgba(255,107,53,0.10);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:10px 14px;margin:0 0 10px;font-size:12px;color:var(--accent2);align-items:center;gap:8px;">
-    📉 <span><b>코스닥 MA60 하락 추세</b> · KOSDAQ 종목 신호 신뢰도 낮음 (score -1, 강력매수 제한 적용)</span>
+    📉 <span><b>코스닥 MA60 하락 추세</b> · KOSDAQ 종목 신호 신뢰도 낮음 (score -2, 강력매수 제한 적용)</span>
   </div>
 
 
@@ -466,12 +466,13 @@
             <span style="color:var(--green);">상승추세</span> MA20 위 + MA60 우상향<br>
             MA60 우상향: MA60(현재) > MA60(5일전) > MA60(10일전)<br>
             <span style="color:var(--text-dim);">눌림목</span> MA20 0~10% 위 + 3일 하락<br>
-            + 거래량 감소 + <b>당일 양봉</b> (조정 마무리 확인)<br>
+            + 거래량 감소 + <b>당일 양봉 or 소폭 하락(-1% 이내)</b><br>
             <span style="opacity:0.6;font-size:10px;">추세 속 일시 조정 종료 신호 → 매수 타이밍</span>
             <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;">
               📐 <b>MA60 이격도 (현재가 / MA60)</b><br>
               <span style="color:var(--green);">≥ 95%</span> 정상 상승 → 신호 정상 반영<br>
-              <span style="color:var(--yellow);">85~95%</span> 눌림 구간 → score -1 패널티<br>
+              <span style="color:var(--yellow);">90~95%</span> 눌림 구간 → score -1 패널티<br>
+              <span style="color:var(--orange);">85~90%</span> 깊은 눌림 → score -2 패널티<br>
               <span style="color:#ff5252;">< 85%</span> 하락장 → RSI 신호 무효 (관망)
             </div>
           </div>
@@ -486,7 +487,7 @@
           <div class="guide-item-desc">
             <span style="color:var(--yellow);">거래량급증</span> 5중 검증 구조<br>
             ① 20일 평균 대비 1.5배 이상<br>
-            ② 양봉 (가격 상승 동반)<br>
+            ② 양봉 or 소폭 하락(-1% 이내)<br>
             ③ 최근 5일 최고 거래량의 80% 이상<br>
             ④ 전일 대비 1.2배 이상<br>
             ⑤ 거래대금 50억 이상 (실전 매매 가능 종목)<br>
@@ -529,16 +530,17 @@
             <span class="ind-tag signal-good" style="font-size:11px;">매수유망</span>
             <span class="ind-tag signal-top" style="font-size:11px;">강력매수</span>
           </div>
-          <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~6점)</div>
+          <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~7점)</div>
           <div class="guide-item-desc">
-            RSI≤40 +1점 / RSI≤30 추가 +1점 (MA60 유효 시만)<br>
+            RSI≤40 +1점 / RSI≤30 +2점 (MA60 유효 + RSI 상승 시만, elif 구조)<br>
             상승추세(MA20위+MA60 t>t-5>t-10) +1점<br>
             거래량급증(5중 검증) +1점<br>
             RSI골든5% +1점 <span style="opacity:0.6;font-size:10px;">(RSI ≤ 60일 때만)</span><br>
             눌림목(MA20근처+3일하락+거래량감소) +1점 / 캔들패턴 +1점<br>
             <span style="color:var(--yellow);">MA60 이격도 85~95%</span> → score -1 패널티<br>
-            <span style="color:#ff9800;">코스피/코스닥 MA60 하락장</span> → score -1 패널티<br>
-            <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">4점↑ 강력매수</span>
+            <span style="color:var(--yellow);">MA60 이격도 85~90%</span> → 추가 score -1 패널티<br>
+            <span style="color:#ff9800;">코스피/코스닥 MA60 하락장</span> → score -2 패널티<br>
+            <span style="color:var(--green);">4점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">5점↑ 강력매수</span>
           </div>
         </div>
 
@@ -561,7 +563,7 @@
             <div class="tab" id="tab-fav-d" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
             <div class="tab" id="tab-h-d" onclick="setView('history',this)">📋 이력</div>
           </div>
-          <input class="search-input" style="width:160px;" type="text" placeholder="종목명 검색..." oninput="saveSettings();filterTable()" id="search-desktop">
+          <input class="search-input" style="width:160px;" type="text" placeholder="종목명 검색..." oninput="syncSearch('search-desktop');saveSettings();filterTable()" id="search-desktop">
         </div>
       </div>
       <div class="th-row2">
@@ -572,7 +574,7 @@
           <div class="tab" id="tab-fav-m" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
           <div class="tab" id="tab-h-m" onclick="setView('history',this)">📋 이력</div>
         </div>
-        <input class="search-input" type="text" placeholder="검색..." oninput="saveSettings();filterTable()" id="search-mobile">
+        <input class="search-input" type="text" placeholder="검색..." oninput="syncSearch('search-mobile');saveSettings();filterTable()" id="search-mobile">
       </div>
     </div>
     <div id="table-body">
@@ -608,10 +610,11 @@
       // 같은 날 같은 종목 중복 방지
       const exists = signalHistory.some(h => h.date === today && h.code === s.code);
       if (!exists) signalHistory.unshift({
-        date: today, code: s.code, name: s.name,
+        date: today, code: s.code, name: s.name, market: s.market,
         signal: s.signal, score: s.score, rsi: s.rsi,
         price: s.price, change_pct: s.change_pct,
-        ma60_ratio: s.ma60_ratio, ma60_penalty: s.ma60_penalty
+        ma60_ratio: s.ma60_ratio, ma60_penalty: s.ma60_penalty,
+        market_penalty: s.market_penalty
       });
     });
     // 최대 200개 유지
@@ -642,10 +645,10 @@
           <div class="card-score-wrap">
             <div class="card-score-label">종합점수</div>
             <div class="card-score-dots">
-              ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<h.score?'on':'off'}"></span>`).join('')}
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/6</span>
+              ${Array.from({length:7},(_,d)=>`<span class="score-dot ${d<h.score?'on':'off'}"></span>`).join('')}
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${h.score}/7</span>
               ${h.ma60_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">MA60이격 -1</span>` : ''}
-              ${h.market_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">${h.market==='KOSPI'?'코스피':'코스닥'}하락 -1</span>` : ''}
+              ${h.market_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">${h.market==='KOSPI'?'코스피':'코스닥'}하락 -2</span>` : ''}
             </div>
             ${h.price ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);display:flex;gap:10px;margin-top:5px;">
               <span>₩${h.price.toLocaleString()}</span>
@@ -728,7 +731,7 @@
   async function quickScan(){
     setScanUI(true);
     try {
-      const r = await fetch('/api/quick-scan');
+      const r = await fetch('/api/quick-scan', {method:'POST'});
       const d = await r.json();
       if (d.status === 'cooldown'){
         alert(d.message);
@@ -805,7 +808,14 @@
   })();
 
   function getSearch(){
+    // 두 검색창 중 값 있는 것 사용 (동기화해서 동일하게 유지)
     return (document.getElementById('search-mobile').value||document.getElementById('search-desktop').value||'').toLowerCase();
+  }
+
+  function syncSearch(src){
+    const val = document.getElementById(src).value;
+    const other = src==='search-mobile' ? 'search-desktop' : 'search-mobile';
+    document.getElementById(other).value = val;
   }
 
   function filterTable(){
@@ -881,16 +891,16 @@
     'MA20아래': '현재가 < 20일 이동평균\n단기 하락 추세',
     'MA60위': '현재가 > 60일 이동평균\n중기 상승 추세 유지',
     '상승추세': 'close > MA20 > MA60 (정배열) + MA60 우상향 + 이격도 ≤ 120%\n중·단기 추세 모두 정배열 + 과열 구간 아님',
-    '거래량급증': '20일 평균 1.5배 이상 + 양봉\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
-    '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)\n+ 당일 양봉 (조정 마무리 신호 확인 후 진입)',
+    '거래량급증': '20일 평균 1.5배 이상 + 양봉 or 소폭 하락(-1% 이내)\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
+    '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)\n+ 당일 양봉 or 소폭 하락(-1% 이내)',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
     'RSI골든지속': 'RSI 골든크로스 발생 후 1~2일 유지 중\n크로스 직후 모멘텀 지속 구간 → 추세 전환 초입\nRSI ≤ 60일 때만 점수 반영',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수/반짝이 반영\nRSI > 60 (과열)이면 참고용 태그만 표시 (+1 미반영)',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
     '장대양봉': '몸통이 캔들 전체의 70% 이상\n강한 매수세가 하루 종일 지속된 신호',
     'MA60이격': 'MA60 이격도 85~95% 구간\nMA60 우상향이지만 현재가가 아직 MA60 위로 충분히 올라오지 못한 상태\n눌림 구간으로 판정 → 점수 -1 패널티 적용',
-    '코스피하락장': '코스피(^KS11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -1, 강력매수 등급 제한\nKOSPI 종목에만 적용',
-    '코스닥하락장': '코스닥(^KQ11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -1, 강력매수 등급 제한\nKOSDAQ 종목에만 적용',
+    '코스피하락장': '코스피(^KS11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -2, 강력매수 등급 제한\nKOSPI 종목에만 적용',
+    '코스닥하락장': '코스닥(^KQ11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -2, 강력매수 등급 제한\nKOSDAQ 종목에만 적용',
   };
 
   // pip = +1 배지, penalty = MA60 패널티 태그 여부
@@ -959,9 +969,9 @@
 
     // 모바일 카드
     const cards = `<div class="mobile-cards">${data.map((s,i)=>{
-      const dots = Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
+      const dots = Array.from({length:7},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
       return `
-      <div class="stock-card ${s.score>=4?'highlight':s.rsi<=30?'highlight-strong':''}">
+      <div class="stock-card ${s.score>=5?'highlight':s.rsi<=30?'highlight-strong':''}">
         <div class="card-top">
           <div class="card-left">
             <div class="card-rank">#${i+1} · ${s.code} · <span style="font-family:'IBM Plex Mono',monospace;">${s.market}</span></div>
@@ -990,9 +1000,9 @@
             <div class="card-score-label">종합점수</div>
             <div class="card-score-dots">
               ${dots}
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/6</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:4px;">${s.score}/7</span>
               ${s.ma60_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">MA60이격 -1</span>` : ''}
-              ${s.market_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">${s.market==='KOSPI'?'코스피':'코스닥'}하락 -1</span>` : ''}
+              ${s.market_penalty ? `<span class="score-pip score-pip-minus" style="margin-left:4px;">${s.market==='KOSPI'?'코스피':'코스닥'}하락 -2</span>` : ''}
             </div>
           </div>
           <div class="card-stats">
@@ -1016,17 +1026,17 @@
         <th>RSI(14)</th><th>거래량</th><th>지표</th><th>52주위치</th><th>신호</th>
       </tr></thead>
       <tbody>${data.map((s,i)=>`
-        <tr class="${s.score>=4?'row-highlight':''}">
+        <tr class="${s.score>=5?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
             <div class="stock-name">${s.name}</div>
             <div class="stock-code" style="display:flex;align-items:center;gap:5px;margin-top:3px;">
               <span>${s.code}</span>
               <span style="color:var(--border);">·</span>
-              ${Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('')}
-              <span style="font-size:10px;color:var(--text-dim);">${s.score}/6</span>
+              ${Array.from({length:7},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('')}
+              <span style="font-size:10px;color:var(--text-dim);">${s.score}/7</span>
               ${s.ma60_penalty ? `<span class="score-pip score-pip-minus">-1</span>` : ''}
-              ${s.market_penalty ? `<span class="score-pip score-pip-minus">시장-1</span>` : ''}
+              ${s.market_penalty ? `<span class="score-pip score-pip-minus">시장-2</span>` : ''}
             </div>
           </td>
           <td style="text-align:center;">
