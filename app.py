@@ -442,7 +442,7 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             'near_bb_lower': near_bb_lower,
             'high_52': high_52, 'low_52': low_52,
             'pct_from_low': pct_from_low, 'pct_from_high': pct_from_high,
-            'score': score, 'signal': signal,
+            'score': score, 'signal': signal, 'market_penalty': False,
         }
         # numpy 타입 → Python 기본 타입 변환 (JSON 직렬화 오류 방지)
         def to_python(v):
@@ -524,9 +524,12 @@ def run_scan(stocks_df, requester_ip):
                 market_up = kospi_up if market == 'KOSPI' else kosdaq_up
                 if not market_up:
                     res['score'] = max(0, res['score'] - 1)  # 점수 -1
+                    res['market_penalty'] = True              # 종목 태그용 플래그
                     # 강력매수 → 매수유망으로 등급 제한
                     if res['signal'] == '강력매수':
                         res['signal'] = '매수유망'
+                else:
+                    res['market_penalty'] = False
             return res
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
