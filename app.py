@@ -257,7 +257,7 @@ def fetch_stock_data(code, market='KOSPI'):
         n = len(close)
         price = round(float(close.iloc[-1]), 0)
         prev  = round(float(close.iloc[-2]), 0)
-        change = round((price - prev) / prev * 100, 2)
+        change = round((price - prev) / prev * 100, 2)  # 전일 종가 대비 등락률
 
         # ── RSI ──
         rsi_series = ta.momentum.RSIIndicator(close, window=14).rsi()
@@ -269,11 +269,11 @@ def fetch_stock_data(code, market='KOSPI'):
             rsi_series.iloc[-2] <= rsi_signal.iloc[-2] and
             rsi_series.iloc[-1] > rsi_signal.iloc[-1]
         )
-        # RSI골든 지속: 골든크로스 발생 후 1~2일 유지 (당일 크로스 제외)
-        # 현재도 RSI > Signal 유지 중이고, 1~2일 전에 크로스가 발생했던 경우
+        # RSI골든 지속: 골든크로스 발생 후 1~4일 유지 (당일 크로스 제외)
+        # 실제 모멘텀 전환 신호는 크로스 후 3~4일까지 유효
         rsi_golden_keep = False
-        if not rsi_golden and n >= 12:
-            for lag in (1, 2):
+        if not rsi_golden and n >= 14:
+            for lag in (1, 2, 3, 4):
                 crossed = (rsi_series.iloc[-1-lag-1] <= rsi_signal.iloc[-1-lag-1] and
                            rsi_series.iloc[-1-lag]   >  rsi_signal.iloc[-1-lag])
                 still_above = rsi_series.iloc[-1] > rsi_signal.iloc[-1]
@@ -281,11 +281,22 @@ def fetch_stock_data(code, market='KOSPI'):
                     rsi_golden_keep = True
                     break
         # RSI가 Signal선보다 5% 이상 위 (골든크로스 당일·직후와 중복 방지)
+        # 단, 골든크로스 후 5일 이상 지난 장기 지속 구간은 제외
+        # (3~4일: rsi_golden_keep 구간, 5일 이상: 추세 지속이 아닌 과열 가능성)
+        rsi_golden_since = 0  # 골든크로스 발생 후 경과 거래일
+        if not rsi_golden:
+            for lag in range(1, min(20, n-1)):
+                if (rsi_series.iloc[-1-lag-1] <= rsi_signal.iloc[-1-lag-1] and
+                        rsi_series.iloc[-1-lag] > rsi_signal.iloc[-1-lag]):
+                    rsi_golden_since = lag
+                    break
         rsi_golden_5 = (
             not rsi_golden and
             not rsi_golden_keep and
             rsi_signal.iloc[-1] > 0 and
-            rsi_series.iloc[-1] >= rsi_signal.iloc[-1] * 1.05
+            rsi_series.iloc[-1] >= rsi_signal.iloc[-1] * 1.05 and
+            rsi_series.iloc[-1] > rsi_signal.iloc[-1] and  # Signal 위 유지 확인
+            (rsi_golden_since == 0 or rsi_golden_since > 4)  # 5일 이상 경과 or 크로스 없음
         )
 
         # RSI 방향: 오늘 RSI > 어제 RSI (하락 중 과매도 칼날 잡기 방지)
@@ -354,16 +365,20 @@ def fetch_stock_data(code, market='KOSPI'):
         vol_valid = vol_ma20 > 0 and vol_current < vol_ma20 * 20
         vol_ratio = round(vol_current / vol_ma20, 2) if vol_ma20 > 0 else 0.0
         open_price = float(hist['Open'].iloc[-1])
-        is_bullish = price > open_price  # 양봉 여부
+        is_bullish = price > open_price  # 양봉 여부 (당일 시가 대비)
+        intraday_change = (price - open_price) / open_price * 100  # 당일 시가 대비 등락률
 
-        # [수정3] 거래량 급증: 양봉 필수 → "양봉 or 당일 -1% 이내" 로 완화
-        # 진짜 눌림목 반등은 음봉 마지막 날에 거래량이 터지는 경우도 많음
-        vol_bullish_ok = is_bullish or (change > -1.0)
+        # vol_bullish_ok / pullback_candle_ok: 전일 종가 대비 change가 아닌
+        # 당일 시가 대비 intraday_change 기준으로 통일
+        # → "오늘 양봉이거나 시가 대비 -1% 이내" 로 일관성 확보
+        vol_bullish_ok = is_bullish or (intraday_change > -1.0)
+        pullback_candle_ok = is_bullish or (intraday_change > -1.0)
+
         is_volume_surge = (
             vol_valid and
             vol_ratio >= 1.5 and                      # 1. 20일 평균 대비 1.5배 이상
             vol_bullish_ok and                        # 2. 양봉 or 소폭 하락(-1% 이내)
-            vol_current >= vol_5day_max * 0.8 and    # 3. 최근 5일 최고 거래량의 80% 이상
+            vol_current >= vol_5day_max * 1.0 and    # 3. 최근 5일 최고 거래량 이상 (실질 필터)
             vol_current > vol_prev * 1.2 and         # 4. 전일 대비 1.2배 이상
             is_liquid                                 # 5. 거래대금 50억 이상
         )
@@ -375,12 +390,8 @@ def fetch_stock_data(code, market='KOSPI'):
         # 거래량 감소: 최근 3일 평균이 20일 평균보다 낮으면 진짜 눌림목
         vol_3day_avg = float(volume.iloc[-3:].mean()) if n >= 3 else vol_current
         vol_declining = vol_3day_avg < vol_ma20 if vol_ma20 > 0 else False
-        # [수정4] 양봉 필수 → "양봉 or 소폭 하락(-1% 이내)"으로 완화
-        # 3일 하락(price < price_3days_ago) + 당일 양봉은 논리 충돌처럼 보이지만
-        # "3일 전보다 낮은 구간에서 오늘 반등 시작(양봉)" = 정상 눌림목 패턴
-        # 소폭 음봉(-1% 이내)까지 허용해 조정 마지막 날 케이스 추가 포착
-        pullback_candle_ok = is_bullish or (change > -1.0)
         is_pullback = (
+            rsi_ma60_valid and             # MA60 상승 추세 유효 시에만 (하락장 눌림목 차단)
             (0 <= ma20_pct <= 10) and
             (price < price_3days_ago) and
             (drop_pct >= -10) and          # 급락(-10% 초과)은 눌림목 아님
@@ -415,9 +426,11 @@ def fetch_stock_data(code, market='KOSPI'):
         )
 
         # 장악형 + 장대양봉만 유지 (명확한 매수세 확인 패턴)
+        # MA60 유효(상승 추세) 시에만 점수 반영 — 하락장 하루 반등봉 차단
         candle_pattern = None
-        if is_engulfing:   candle_pattern = '장악형'
-        elif is_marubozu:  candle_pattern = '장대양봉'
+        if rsi_ma60_valid:
+            if is_engulfing:   candle_pattern = '장악형'
+            elif is_marubozu:  candle_pattern = '장대양봉'
 
         # ── 52주 고저 ──
         high_52 = round(float(close.tail(252).max()), 0)
