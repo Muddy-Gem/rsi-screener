@@ -283,6 +283,9 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             rsi_series.iloc[-1] >= rsi_signal.iloc[-1] * 1.05
         )
 
+        # RSI 방향: 오늘 RSI > 어제 RSI (하락 중 과매도 칼날 잡기 방지)
+        rsi_rising = float(rsi_series.iloc[-1]) > float(rsi_series.iloc[-2])
+
         # ── 이동평균선 ──
         ma20_series = close.rolling(min(20,n)).mean()
         ma60_series = close.rolling(min(60,n)).mean()
@@ -421,12 +424,12 @@ def fetch_stock_data(code, market='KOSPI', period=14):
 
         # ── 종합 신호 점수 (0~6점) ──
         score = 0
-        if rsi_val <= 40 and rsi_ma60_valid: score += 1
-        if rsi_val <= 30 and rsi_ma60_valid: score += 1
+        if rsi_val <= 40 and rsi_ma60_valid and rsi_rising: score += 1
+        if rsi_val <= 30 and rsi_ma60_valid and rsi_rising: score += 1
         if is_uptrend: score += 1
         if is_volume_surge: score += 1
-        if rsi_golden_keep and rsi_val <= 60: score += 1   # 골든크로스 후 1~2일 모멘텀 지속
-        if rsi_golden_5 and rsi_val <= 60: score += 1
+        # RSI골든지속 / RSI골든5% 중 하나만 점수 (중복 방지)
+        if (rsi_golden_keep or rsi_golden_5) and rsi_val <= 60: score += 1
         if is_pullback: score += 1
         if candle_pattern: score += 1
         if ma60_penalty: score = max(0, score - 1)  # MA60 이격 눌림 구간 패널티
@@ -440,7 +443,7 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         result = {
             'name': None, 'code': code, 'market': None,
             'price': price, 'change_pct': change,
-            'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_keep': rsi_golden_keep, 'rsi_golden_5': rsi_golden_5,
+            'rsi': rsi_val, 'rsi_rising': rsi_rising, 'rsi_golden': rsi_golden, 'rsi_golden_keep': rsi_golden_keep, 'rsi_golden_5': rsi_golden_5,
             'ma20': ma20, 'ma60': ma60,
             'above_ma20': above_ma20, 'above_ma60': above_ma60, 'near_ma20': near_ma20,
             'ma60_rising': ma60_rising, 'ma60_trend': ma60_trend,
