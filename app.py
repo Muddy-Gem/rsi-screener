@@ -8,6 +8,7 @@ import threading
 import time
 import json
 import os
+import tempfile
 import concurrent.futures
 from datetime import datetime, timedelta
 import pytz
@@ -187,7 +188,8 @@ def can_scan(ip):
     """IP별 쿨다운 체크 (5분에 1회 제한)"""
     if ip in ('auto', '127.0.0.1'):
         return True
-    now = datetime.now()
+    kst = pytz.timezone('Asia/Seoul')
+    now = datetime.now(kst)
     last = last_scan_by_ip.get(ip)
     if last and now - last < SCAN_COOLDOWN:
         return False
@@ -309,7 +311,7 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         # ── 상승추세: MA20 위 + MA60 우상향 ──
         is_uptrend = above_ma20 and ma60_trend
 
-        # ── 거래량 (4중 필터 + 거래대금) ──
+        # ── 거래량 (5중 검증: 20일평균비 + 양봉 + 5일최고비 + 전일비 + 거래대금) ──
         volume = hist['Volume']
         vol_current = float(volume.iloc[-1])
         vol_prev    = float(volume.iloc[-2])
@@ -453,17 +455,26 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         return None
 
 def save_cache():
+    tmp_path = None
     try:
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump({
-                'data': cache['data'],
-                'all_data': cache['all_data'],
-                'timestamp': cache['timestamp'],
-                'kospi_market_up': cache['kospi_market_up'],
-                'kosdaq_market_up': cache['kosdaq_market_up'],
-            }, f, ensure_ascii=False)
+        payload = {
+            'data': cache['data'],
+            'all_data': cache['all_data'],
+            'timestamp': cache['timestamp'],
+            'kospi_market_up': cache['kospi_market_up'],
+            'kosdaq_market_up': cache['kosdaq_market_up'],
+        }
+        dir_name = os.path.dirname(os.path.abspath(CACHE_FILE)) or '.'
+        with tempfile.NamedTemporaryFile('w', dir=dir_name, delete=False,
+                                         suffix='.tmp', encoding='utf-8') as tmp:
+            json.dump(payload, tmp, ensure_ascii=False)
+            tmp_path = tmp.name
+        os.replace(tmp_path, CACHE_FILE)
+        tmp_path = None  # 성공 시 정리 불필요
     except Exception as e:
         print(f"캐시 저장 오류: {e}")
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def load_cache():
     try:
@@ -615,7 +626,7 @@ def get_results():
 def quick_scan():
     ip = request.remote_addr
     if not can_scan(ip):
-        remaining = SCAN_COOLDOWN - (datetime.now() - last_scan_by_ip.get(ip, datetime.min))
+        remaining = SCAN_COOLDOWN - (datetime.now(pytz.timezone('Asia/Seoul')) - last_scan_by_ip.get(ip, datetime.min.replace(tzinfo=pytz.timezone('Asia/Seoul'))))
         mins = int(remaining.total_seconds() / 60) + 1
         return jsonify({'message': f'너무 자주 스캔하고 있습니다. {mins}분 후 다시 시도하세요.', 'status': 'cooldown'})
     if not scan_lock.acquire(blocking=False):
@@ -629,7 +640,7 @@ def quick_scan():
 def full_scan():
     ip = request.remote_addr
     if not can_scan(ip):
-        remaining = SCAN_COOLDOWN - (datetime.now() - last_scan_by_ip.get(ip, datetime.min))
+        remaining = SCAN_COOLDOWN - (datetime.now(pytz.timezone('Asia/Seoul')) - last_scan_by_ip.get(ip, datetime.min.replace(tzinfo=pytz.timezone('Asia/Seoul'))))
         mins = int(remaining.total_seconds() / 60) + 1
         return jsonify({'message': f'너무 자주 스캔하고 있습니다. {mins}분 후 다시 시도하세요.', 'status': 'cooldown'})
     if not scan_lock.acquire(blocking=False):
