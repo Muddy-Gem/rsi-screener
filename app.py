@@ -13,10 +13,24 @@ import concurrent.futures
 from datetime import datetime, timedelta
 import pytz
 
+try:
+    from pykrx import stock as pykrx_stock
+    PYKRX_AVAILABLE = True
+except ImportError:
+    PYKRX_AVAILABLE = False
+
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-STOCKS = [
+# ── 전종목 수집 설정 ──────────────────────────────────────
+STOCK_CACHE_FILE   = 'stock_list_cache.json'   # 종목 목록 캐시 파일
+STOCK_CACHE_TTL_H  = 24                         # 캐시 유효 시간 (시간)
+TOP_N_STOCKS       = 600                        # 시가총액 상위 N개 제한 (None = 전종목)
+MIN_MARKET_CAP     = 300_000_000_000            # 최소 시가총액 3000억 (너무 작은 종목 제외)
+# ─────────────────────────────────────────────────────────
+
+# 폴백용 하드코딩 목록 (pykrx 실패 시 사용)
+FALLBACK_STOCKS = [
     {'name':'삼성전자','code':'005930','market':'KOSPI'},
     {'name':'SK하이닉스','code':'000660','market':'KOSPI'},
     {'name':'LG에너지솔루션','code':'373220','market':'KOSPI'},
@@ -169,6 +183,10 @@ STOCKS = [
     {'name':'성우하이텍','code':'015750','market':'KOSDAQ'},
 ]
 
+# ── 종목 목록 캐시 (메모리) ──
+_stock_list_cache = {'stocks': None, 'updated_at': None}
+_stock_list_lock  = threading.Lock()
+
 CACHE_FILE = 'scan_cache.json'
 
 cache = {
@@ -200,8 +218,141 @@ def can_scan(ip):
     last_scan_by_ip[ip] = now
     return True
 
-def get_stocks():
-    return pd.DataFrame(STOCKS)
+def _load_stock_list_file_cache():
+    """디스크 캐시에서 종목 목록 로드 (서버 재시작 시 재수집 방지)"""
+    try:
+        if not os.path.exists(STOCK_CACHE_FILE):
+            return None
+        with open(STOCK_CACHE_FILE, 'r', encoding='utf-8') as f:
+            saved = json.load(f)
+        updated_at = datetime.fromisoformat(saved['updated_at'])
+        age_h = (datetime.now() - updated_at).total_seconds() / 3600
+        if age_h > STOCK_CACHE_TTL_H:
+            return None
+        stocks = saved['stocks']
+        print(f"[종목목록] 디스크 캐시 로드: {len(stocks)}개 (갱신: {saved['updated_at']})")
+        return stocks
+    except Exception as e:
+        print(f"[종목목록] 디스크 캐시 로드 실패: {e}")
+        return None
+
+def _save_stock_list_file_cache(stocks):
+    """종목 목록을 디스크에 저장"""
+    try:
+        payload = {'stocks': stocks, 'updated_at': datetime.now().isoformat()}
+        tmp_path = None
+        dir_name = os.path.dirname(os.path.abspath(STOCK_CACHE_FILE)) or '.'
+        with tempfile.NamedTemporaryFile('w', dir=dir_name, delete=False,
+                                         suffix='.tmp', encoding='utf-8') as tmp:
+            json.dump(payload, tmp, ensure_ascii=False)
+            tmp_path = tmp.name
+        os.replace(tmp_path, STOCK_CACHE_FILE)
+        print(f"[종목목록] 디스크 캐시 저장: {len(stocks)}개")
+    except Exception as e:
+        print(f"[종목목록] 디스크 캐시 저장 실패: {e}")
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+def _fetch_stock_list_from_pykrx():
+    """pykrx로 코스피+코스닥 전종목 수집 (시가총액 필터 포함)"""
+    kst = pytz.timezone('Asia/Seoul')
+    now = datetime.now(kst)
+    # 주말이면 금요일, 평일이면 당일 (전일 기준이면 -1일)
+    weekday = now.weekday()
+    if weekday == 5:   offset = 1   # 토요일 → 금요일
+    elif weekday == 6: offset = 2   # 일요일 → 금요일
+    else:              offset = 1   # 평일 → 전일 (당일 확정 전)
+    target_date = (now - timedelta(days=offset)).strftime('%Y%m%d')
+
+    stocks = []
+    for market in ('KOSPI', 'KOSDAQ'):
+        try:
+            # 종목 코드 + 이름
+            tickers = pykrx_stock.get_market_ticker_list(date=target_date, market=market)
+            if not tickers:
+                print(f"[pykrx] {market} 종목 목록 비어있음")
+                continue
+
+            # 시가총액 조회 (필터링용)
+            try:
+                cap_df = pykrx_stock.get_market_cap_by_ticker(target_date, market=market)
+                cap_map = cap_df['시가총액'].to_dict() if '시가총액' in cap_df.columns else {}
+            except Exception:
+                cap_map = {}
+
+            for code in tickers:
+                name = pykrx_stock.get_market_ticker_name(code)
+                if not name:
+                    continue
+                cap = cap_map.get(code, 0)
+                # 최소 시가총액 필터
+                if cap and cap < MIN_MARKET_CAP:
+                    continue
+                stocks.append({
+                    'name':   name,
+                    'code':   code,
+                    'market': market,
+                    'cap':    int(cap) if cap else 0,
+                })
+            print(f"[pykrx] {market}: {len([s for s in stocks if s['market']==market])}개 수집")
+        except Exception as e:
+            print(f"[pykrx] {market} 수집 오류: {e}")
+
+    if not stocks:
+        return None
+
+    # 시가총액 내림차순 정렬 → 상위 N개 선택
+    stocks.sort(key=lambda x: x['cap'], reverse=True)
+    if TOP_N_STOCKS:
+        stocks = stocks[:TOP_N_STOCKS]
+
+    # cap 필드 제거 (스캔 로직에 불필요)
+    for s in stocks:
+        s.pop('cap', None)
+
+    print(f"[pykrx] 최종 {len(stocks)}개 종목 (TOP_N={TOP_N_STOCKS})")
+    return stocks
+
+def get_stocks() -> pd.DataFrame:
+    """전종목 목록 반환.
+
+    우선순위:
+      1. 메모리 캐시 (TTL 24h)
+      2. 디스크 캐시 (TTL 24h, 서버 재시작 시 복원)
+      3. pykrx 실시간 수집
+      4. 폴백: 하드코딩 FALLBACK_STOCKS
+
+    Returns:
+        DataFrame with columns: name, code, market
+    """
+    with _stock_list_lock:
+        # 1. 메모리 캐시
+        if _stock_list_cache['stocks'] is not None:
+            age_h = 0
+            if _stock_list_cache['updated_at']:
+                age_h = (datetime.now() - _stock_list_cache['updated_at']).total_seconds() / 3600
+            if age_h < STOCK_CACHE_TTL_H:
+                return pd.DataFrame(_stock_list_cache['stocks'])
+
+        # 2. 디스크 캐시
+        from_disk = _load_stock_list_file_cache()
+        if from_disk:
+            _stock_list_cache['stocks']     = from_disk
+            _stock_list_cache['updated_at'] = datetime.now()
+            return pd.DataFrame(from_disk)
+
+        # 3. pykrx 수집
+        if PYKRX_AVAILABLE:
+            stocks = _fetch_stock_list_from_pykrx()
+            if stocks:
+                _stock_list_cache['stocks']     = stocks
+                _stock_list_cache['updated_at'] = datetime.now()
+                _save_stock_list_file_cache(stocks)
+                return pd.DataFrame(stocks)
+
+        # 4. 폴백
+        print(f"[종목목록] pykrx 수집 실패 → 폴백 {len(FALLBACK_STOCKS)}개 사용")
+        return pd.DataFrame(FALLBACK_STOCKS)
 
 def check_market_trend(ticker_symbol):
     """지수 MA60 우상향 여부 확인 (t > t-5 > t-10)"""
@@ -635,6 +786,9 @@ def get_status():
         'is_stale': is_stale,
         'kospi_market_up': cache['kospi_market_up'],
         'kosdaq_market_up': cache['kosdaq_market_up'],
+        'stock_list_count': len(_stock_list_cache['stocks']) if _stock_list_cache['stocks'] else len(FALLBACK_STOCKS),
+        'stock_list_updated': _stock_list_cache['updated_at'].strftime('%Y-%m-%d %H:%M:%S') if _stock_list_cache['updated_at'] else None,
+        'pykrx_available': PYKRX_AVAILABLE,
     })
 
 # ── 즐겨찾기 (프론트 localStorage 사용 — 서버 API 미사용) ──
@@ -668,12 +822,33 @@ def quick_scan():
     t = threading.Thread(target=run_scan, args=(get_stocks(), ip))
     t.daemon = True
     t.start()
-    return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(STOCKS)})
+    stocks_df = get_stocks()
+    return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(stocks_df)})
 
 @app.route('/api/scan', methods=['GET','POST'])
 def full_scan():
     """quick_scan과 동일 — 하위 호환성 유지용"""
     return quick_scan()
+
+@app.route('/api/refresh-stock-list', methods=['POST'])
+def refresh_stock_list():
+    """종목 목록 캐시 강제 갱신 (pykrx 재수집)"""
+    with _stock_list_lock:
+        _stock_list_cache['stocks']     = None
+        _stock_list_cache['updated_at'] = None
+    # 디스크 캐시도 삭제
+    try:
+        if os.path.exists(STOCK_CACHE_FILE):
+            os.remove(STOCK_CACHE_FILE)
+    except Exception:
+        pass
+    # 재수집
+    df = get_stocks()
+    return jsonify({
+        'message': f'종목 목록 갱신 완료: {len(df)}개',
+        'count': len(df),
+        'pykrx_available': PYKRX_AVAILABLE,
+    })
 
 if __name__ == '__main__':
     load_cache()
