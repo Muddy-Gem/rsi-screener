@@ -443,7 +443,7 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         if candle_pattern: score += 1
         if ma60_penalty: score = max(0, score - 1)  # MA60 이격 눌림 구간 패널티
 
-        if score >= 5 and rsi_val <= 60:              signal = '강력매수'
+        if score >= 4 and rsi_val <= 60:              signal = '강력매수'
         elif score >= 3 and rsi_val <= 60:            signal = '매수유망'
         elif rsi_val <= 30 and rsi_ma60_valid:        signal = '강한매수'   # MA60 상승 중일 때만
         elif rsi_val <= 40 and rsi_ma60_valid:        signal = '매수고려'   # MA60 상승 중일 때만
