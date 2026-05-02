@@ -323,8 +323,16 @@ def fetch_stock_data(code, market='KOSPI', period=14):
 
         ma60_rising = ma60_trend  # 기존 필드 호환성 유지
 
-        # ── 상승추세: MA20 위 + MA60 우상향 ──
-        is_uptrend = above_ma20 and ma60_trend
+        # ── 상승추세: close > MA20 > MA60 + MA60 우상향 + 이격도 상한 1.2 ──
+        # close > ma20 > ma60: 정배열 확인 (역배열 상태 제거)
+        # ma60_ratio <= 1.2: 과열 구간 제거 (MA60 대비 20% 이상 급등 종목)
+        ma20_above_ma60 = ma20 > ma60 if n >= 60 else False
+        is_uptrend = (
+            above_ma20 and
+            ma20_above_ma60 and
+            ma60_trend and
+            ma60_ratio <= 1.2
+        )
 
         # ── 거래량 (5중 검증: 20일평균비 + 양봉 + 5일최고비 + 전일비 + 거래대금) ──
         volume = hist['Volume']
@@ -399,9 +407,10 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             op < cl_prev            # 오늘 시가 < 전일 종가
         )
 
+        # 망치형 제거: 아래꼬리만 길면 조건 충족 → 노이즈 많음
+        # 장악형 + 장대양봉만 유지 (명확한 매수세 확인 패턴)
         candle_pattern = None
-        if is_hammer:     candle_pattern = '망치형'
-        elif is_engulfing: candle_pattern = '장악형'
+        if is_engulfing:   candle_pattern = '장악형'
         elif is_marubozu:  candle_pattern = '장대양봉'
 
         # ── 볼린저밴드 (20일, 2σ) ──
