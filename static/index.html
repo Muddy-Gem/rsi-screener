@@ -497,14 +497,12 @@
         <!-- 캔들패턴 -->
         <div class="guide-item" style="border-left:3px solid var(--orange);">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-            <span class="ind-tag ind-orange" style="font-size:11px;">망치형</span>
             <span class="ind-tag ind-orange" style="font-size:11px;">장대양봉</span>
             <span class="ind-tag ind-orange" style="font-size:11px;">장악형</span>
           </div>
           <div class="guide-item-title" style="margin-bottom:6px;">캔들패턴 (반등 확인)</div>
           <div class="guide-item-desc">
-            <span style="color:var(--orange);">망치형</span> 아래꼬리 > 몸통 2배, 강한 매수 유입<br>
-            <span style="color:var(--orange);">장대양봉</span> 몸통이 캔들의 70%↑, 압도적 매수<br>
+            <span style="color:var(--orange);">장대양봉</span> 몸통이 캔들의 70%↑, 압도적 매수세<br>
             <span style="color:var(--orange);">장악형</span> 전일 음봉을 오늘 양봉이 완전히 감쌈<br>
             <span style="opacity:0.6;font-size:10px;">눌림목 + 거래량급증과 함께 뜨면 최강 신호</span>
           </div>
@@ -540,7 +538,7 @@
             눌림목(MA20근처+3일하락+거래량감소) +1점 / 캔들패턴 +1점<br>
             <span style="color:var(--yellow);">MA60 이격도 85~95%</span> → score -1 패널티<br>
             <span style="color:#ff9800;">코스피/코스닥 MA60 하락장</span> → score -1 패널티<br>
-            <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">5점↑ 강력매수</span>
+            <span style="color:var(--green);">3점↑ 매수유망</span> · <span style="color:var(--green);font-weight:600;">4점↑ 강력매수</span>
           </div>
         </div>
 
@@ -882,14 +880,14 @@
     'MA20근접': '현재가가 20일선 ±3% 이내\n지지선 근처에서 눌림목',
     'MA20아래': '현재가 < 20일 이동평균\n단기 하락 추세',
     'MA60위': '현재가 > 60일 이동평균\n중기 상승 추세 유지',
-    '상승추세': 'MA20 위 + MA60 우상향\n중·단기 추세 모두 살아있음',
+    '상승추세': 'close > MA20 > MA60 (정배열) + MA60 우상향 + 이격도 ≤ 120%\n중·단기 추세 모두 정배열 + 과열 구간 아님',
     '거래량급증': '20일 평균 1.5배 이상 + 양봉\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
-    '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)',
+    '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)\n+ 당일 양봉 (조정 마무리 신호 확인 후 진입)',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
     'RSI골든지속': 'RSI 골든크로스 발생 후 1~2일 유지 중\n크로스 직후 모멘텀 지속 구간 → 추세 전환 초입\nRSI ≤ 60일 때만 점수 반영',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수/반짝이 반영\nRSI > 60 (과열)이면 참고용 태그만 표시 (+1 미반영)',
-    '망치형': '아래꼬리가 몸통의 2배 이상 + 위꼬리 짧음\n하락 중 강한 매수세 유입. 반등 시작 신호',
     '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
+    '장대양봉': '몸통이 캔들 전체의 70% 이상\n강한 매수세가 하루 종일 지속된 신호',
     'MA60이격': 'MA60 이격도 85~95% 구간\nMA60 우상향이지만 현재가가 아직 MA60 위로 충분히 올라오지 못한 상태\n눌림 구간으로 판정 → 점수 -1 패널티 적용',
     '코스피하락장': '코스피(^KS11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -1, 강력매수 등급 제한\nKOSPI 종목에만 적용',
     '코스닥하락장': '코스닥(^KQ11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -1, 강력매수 등급 제한\nKOSDAQ 종목에만 적용',
@@ -963,7 +961,7 @@
     const cards = `<div class="mobile-cards">${data.map((s,i)=>{
       const dots = Array.from({length:6},(_,d)=>`<span class="score-dot ${d<s.score?'on':'off'}"></span>`).join('');
       return `
-      <div class="stock-card ${s.score>=5?'highlight':s.rsi<=30?'highlight-strong':''}">
+      <div class="stock-card ${s.score>=4?'highlight':s.rsi<=30?'highlight-strong':''}">
         <div class="card-top">
           <div class="card-left">
             <div class="card-rank">#${i+1} · ${s.code} · <span style="font-family:'IBM Plex Mono',monospace;">${s.market}</span></div>
@@ -1018,7 +1016,7 @@
         <th>RSI(14)</th><th>거래량</th><th>지표</th><th>52주위치</th><th>신호</th>
       </tr></thead>
       <tbody>${data.map((s,i)=>`
-        <tr class="${s.score>=5?'row-highlight':''}">
+        <tr class="${s.score>=4?'row-highlight':''}">
           <td style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">${i+1}</td>
           <td>
             <div class="stock-name">${s.name}</div>
