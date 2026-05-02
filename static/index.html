@@ -328,17 +328,17 @@
     <div class="stat-card red">
       <div class="stat-label">RSI ≤ 30</div>
       <div class="stat-value" id="stat-strong">-</div>
-      <div class="stat-desc">극과매도 (강한매수 신호)</div>
+      <div class="stat-desc">극과매도 (RSI바닥 신호)</div>
     </div>
     <div class="stat-card yellow">
       <div class="stat-label">매수고려 이상</div>
       <div class="stat-value" id="stat-consider">-</div>
-      <div class="stat-desc" id="stat-consider-desc">매수고려 / 강한매수 신호</div>
+      <div class="stat-desc" id="stat-consider-desc">매수고려 / RSI바닥 신호</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">매수유망 이상</div>
+      <div class="stat-label">강력매수</div>
       <div class="stat-value" id="stat-promising">-</div>
-      <div class="stat-desc">매수유망 / 강력매수 신호</div>
+      <div class="stat-desc">강력매수 신호</div>
     </div>
   </div>
 
@@ -436,7 +436,6 @@
             <span style="color:#a259ff;">RSI골든5%</span> RSI ≤ 60일 때만 점수반영 (과열구간 제외)<br>
             <span style="opacity:0.6;font-size:10px;">⚠️ MA60 하락·이격도 85% 미만·RSI 하락 중이면 점수 미반영</span><br>
             <span style="opacity:0.6;font-size:10px;">⚠️ RSI > 60이면 점수와 무관하게 강력매수 미표시 (과열 구간)</span>
-            <span style="opacity:0.6;font-size:10px;">⚠️ RSI > 45이면 매수유망 미표시 (과매도 구간에서만 허용)</span>
           </div>
         </div>
 
@@ -531,7 +530,6 @@
         <!-- 종합점수 -->
         <div class="guide-item g-score">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-            <span class="ind-tag signal-good" style="font-size:11px;">매수유망</span>
             <span class="ind-tag signal-top" style="font-size:11px;">강력매수</span>
           </div>
           <div class="guide-item-title" style="margin-bottom:6px;">종합 점수 (0~7점)</div>
@@ -544,7 +542,7 @@
             <span style="color:var(--yellow);">MA60 이격도 85~95%</span> → score -1 패널티<br>
             <span style="color:var(--yellow);">MA60 이격도 85~90%</span> → 추가 score -1 패널티<br>
             <span style="color:#ff9800;">코스피/코스닥 MA60 하락장</span> → score -2 패널티<br>
-            <span style="color:var(--green);">3점↑ + RSI≤45 매수유망</span> · <span style="color:var(--green);font-weight:600;">4점↑ + RSI≤60 강력매수</span>
+            <span style="color:var(--green);font-weight:600;">4점↑ + RSI≤60 → 강력매수</span>
           </div>
         </div>
 
@@ -563,7 +561,7 @@
           <div class="tabs">
             <div class="tab" id="tab-a-d" onclick="setView('all',this)">전체</div>
             <div class="tab active" id="tab-f-d" onclick="setView('rsi40',this)">RSI ≤ 40</div>
-            <div class="tab" id="tab-p-d" onclick="setView('promising',this)">매수유망</div>
+            <div class="tab" id="tab-p-d" onclick="setView('promising',this)">강력매수</div>
             <div class="tab" id="tab-fav-d" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
             <div class="tab" id="tab-h-d" onclick="setView('history',this)">📋 이력</div>
           </div>
@@ -574,7 +572,7 @@
         <div class="tabs">
           <div class="tab" id="tab-a-m" onclick="setView('all',this)">전체</div>
           <div class="tab active" id="tab-f-m" onclick="setView('rsi40',this)">RSI≤40</div>
-          <div class="tab" id="tab-p-m" onclick="setView('promising',this)">매수유망</div>
+          <div class="tab" id="tab-p-m" onclick="setView('promising',this)">강력매수</div>
           <div class="tab" id="tab-fav-m" onclick="setView('favorites',this)">⭐ 즐겨찾기</div>
           <div class="tab" id="tab-h-m" onclick="setView('history',this)">📋 이력</div>
         </div>
@@ -606,10 +604,10 @@
     filterTable();
   }
 
-  // ── 신호 이력 저장 (스캔 완료 시 강력매수/매수유망 종목 기록) ──
+  // ── 신호 이력 저장 (스캔 완료 시 강력매수·RSI바닥 종목 기록) ──
   function saveHistory(data){
     const today = new Date().toLocaleDateString('ko-KR');
-    const notable = data.filter(s => ['매수유망','강력매수','강한매수'].includes(s.signal));
+    const notable = data.filter(s => ['강력매수','RSI바닥'].includes(s.signal));
     notable.forEach(s => {
       // 같은 날 같은 종목 중복 방지
       const exists = signalHistory.some(h => h.date === today && h.code === s.code);
@@ -629,7 +627,7 @@
   function renderHistory(){
     const el = document.getElementById('table-body');
     if (!signalHistory.length){
-      el.innerHTML = `<div class="history-empty">📋 아직 이력이 없습니다<br><span style="font-size:11px;opacity:0.5;">스캔 완료 시 매수유망 이상 종목이 자동 기록됩니다</span></div>`;
+      el.innerHTML = `<div class="history-empty">📋 아직 이력이 없습니다<br><span style="font-size:11px;opacity:0.5;">스캔 완료 시 강력매수·RSI바닥 종목이 자동 기록됩니다</span></div>`;
       return;
     }
     const rows = signalHistory.map(h=>`
@@ -834,7 +832,7 @@
       if (!(mkt==='ALL'||s.market===mkt)) return false;
       if (!(s.name.toLowerCase().includes(q)||s.code.includes(q))) return false;
       if (currentView==='all') return s.rsi <= thr;
-      if (currentView==='promising') return ['매수유망','강력매수','강한매수'].includes(s.signal);
+      if (currentView==='promising') return ['강력매수','RSI바닥'].includes(s.signal);
       if (currentView==='favorites') return favorites.has(s.code);
       return s.rsi <= 40; // rsi40 탭은 항상 40 고정
     });
@@ -855,15 +853,15 @@
 
   function updateStats(thr){
     document.getElementById('stat-total').textContent = allData.length||'-';
-    // RSI ≤ 30 + MA60 유효 (강한매수 실제 조건)
+    // RSI ≤ 30 + MA60 유효 (RSI바닥 실제 조건)
     document.getElementById('stat-strong').textContent =
       allData.filter(s=>s.rsi<=30 && s.rsi_ma60_valid).length||'-';
-    // 매수고려 + 강한매수 신호
-    const considerCount = allData.filter(s=>['매수고려','강한매수'].includes(s.signal)).length;
+    // 매수고려 + RSI바닥 신호
+    const considerCount = allData.filter(s=>['매수고려','RSI바닥'].includes(s.signal)).length;
     document.getElementById('stat-consider').textContent = considerCount||'-';
-    // 매수유망 탭과 동일한 기준: 매수유망 + 강력매수 + 강한매수
+    // 강력매수 신호 종목 수
     document.getElementById('stat-promising').textContent =
-      allData.filter(s=>['매수유망','강력매수','강한매수'].includes(s.signal)).length||'-';
+      allData.filter(s=>s.signal==='강력매수').length||'-';
   }
 
   function renderResults(ts){
@@ -878,8 +876,7 @@
   function sigHTML(s){
     const map = {
       '강력매수': 'signal-top',
-      '매수유망': 'signal-good',
-      '강한매수': 'signal-strong',
+      'RSI바닥': 'signal-strong',
       '매수고려': 'signal-consider',
       '관망': 'signal-watch',
     };
