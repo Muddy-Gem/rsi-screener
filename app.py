@@ -264,9 +264,21 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             rsi_series.iloc[-2] <= rsi_signal.iloc[-2] and
             rsi_series.iloc[-1] > rsi_signal.iloc[-1]
         )
-        # RSI가 Signal선보다 5% 이상 위
+        # RSI골든 지속: 골든크로스 발생 후 1~2일 유지 (당일 크로스 제외)
+        # 현재도 RSI > Signal 유지 중이고, 1~2일 전에 크로스가 발생했던 경우
+        rsi_golden_keep = False
+        if not rsi_golden and n >= 12:
+            for lag in (1, 2):
+                crossed = (rsi_series.iloc[-1-lag-1] <= rsi_signal.iloc[-1-lag-1] and
+                           rsi_series.iloc[-1-lag]   >  rsi_signal.iloc[-1-lag])
+                still_above = rsi_series.iloc[-1] > rsi_signal.iloc[-1]
+                if crossed and still_above:
+                    rsi_golden_keep = True
+                    break
+        # RSI가 Signal선보다 5% 이상 위 (골든크로스 당일·직후와 중복 방지)
         rsi_golden_5 = (
             not rsi_golden and
+            not rsi_golden_keep and
             rsi_signal.iloc[-1] > 0 and
             rsi_series.iloc[-1] >= rsi_signal.iloc[-1] * 1.05
         )
@@ -348,7 +360,8 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             (0 <= ma20_pct <= 10) and
             (price < price_3days_ago) and
             (drop_pct >= -10) and      # 급락(-10% 초과)은 눌림목 아님
-            vol_declining              # 거래량 감소 = 진짜 눌림목
+            vol_declining and          # 거래량 감소 = 진짜 눌림목
+            is_bullish                 # 당일 양봉 = 조정 마무리 신호
         )
 
         # ── 캔들패턴 ──
@@ -412,6 +425,7 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         if rsi_val <= 30 and rsi_ma60_valid: score += 1
         if is_uptrend: score += 1
         if is_volume_surge: score += 1
+        if rsi_golden_keep and rsi_val <= 60: score += 1   # 골든크로스 후 1~2일 모멘텀 지속
         if rsi_golden_5 and rsi_val <= 60: score += 1
         if is_pullback: score += 1
         if candle_pattern: score += 1
@@ -426,7 +440,7 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         result = {
             'name': None, 'code': code, 'market': None,
             'price': price, 'change_pct': change,
-            'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_5': rsi_golden_5,
+            'rsi': rsi_val, 'rsi_golden': rsi_golden, 'rsi_golden_keep': rsi_golden_keep, 'rsi_golden_5': rsi_golden_5,
             'ma20': ma20, 'ma60': ma60,
             'above_ma20': above_ma20, 'above_ma60': above_ma60, 'near_ma20': near_ma20,
             'ma60_rising': ma60_rising, 'ma60_trend': ma60_trend,
