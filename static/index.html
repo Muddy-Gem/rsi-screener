@@ -432,7 +432,7 @@
             <span style="color:var(--yellow);">RSI과매도</span> ≤40 → 매수 고려 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--red);">RSI극과매도</span> ≤30 → 강한 신호 <span style="opacity:0.5;font-size:10px;">✨점수반영</span><br>
             <span style="color:var(--accent);">RSI골든</span> RSI가 Signal선(9일MA) 상향 돌파<br>
-            <span style="color:var(--purple);">RSI골든지속</span> 골든크로스 후 1~2일 유지 → 점수반영 ✨<br>
+            <span style="color:var(--purple);">RSI골든지속</span> 골든크로스 후 1~4일 유지 → 점수반영 ✨<br>
             <span style="color:#a259ff;">RSI골든5%</span> RSI ≤ 60일 때만 점수반영 (과열구간 제외)<br>
             <span style="opacity:0.6;font-size:10px;">⚠️ MA60 하락·이격도 85% 미만·RSI 하락 중이면 점수 미반영</span><br>
             <span style="opacity:0.6;font-size:10px;">⚠️ RSI > 60이면 점수와 무관하게 강력매수/매수유망 미표시 (과열 구간)</span>
@@ -467,7 +467,8 @@
             <span style="color:var(--green);">상승추세</span> MA20 위 + MA60 우상향<br>
             MA60 우상향: MA60(현재) > MA60(5일전) > MA60(10일전)<br>
             <span style="color:var(--text-dim);">눌림목</span> MA20 0~10% 위 + 3일 하락<br>
-            + 거래량 감소 + <b>당일 양봉 or 소폭 하락(-1% 이내)</b><br>
+            + 거래량 감소 + <b>당일 양봉 or 소폭 하락(-1% 이내, 시가 기준)</b><br>
+            <span style="opacity:0.6;font-size:10px;">⚠️ MA60 상승 추세 유효 시에만 인정 — 하락장 단순 횡보 제외</span>
             <span style="opacity:0.6;font-size:10px;">추세 속 일시 조정 종료 신호 → 매수 타이밍</span>
             <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;">
               📐 <b>MA60 이격도 (현재가 / MA60)</b><br>
@@ -489,7 +490,7 @@
             <span style="color:var(--yellow);">거래량급증</span> 5중 검증 구조<br>
             ① 20일 평균 대비 1.5배 이상<br>
             ② 양봉 or 소폭 하락(-1% 이내)<br>
-            ③ 최근 5일 최고 거래량의 80% 이상<br>
+            ③ 최근 5일 최고 거래량 이상 (5일 신고 거래량)<br>
             ④ 전일 대비 1.2배 이상<br>
             ⑤ 거래대금 50억 이상 (실전 매매 가능 종목)<br>
             <span style="opacity:0.6;font-size:10px;">하나라도 미충족 시 태그 미표시</span>
@@ -506,6 +507,7 @@
           <div class="guide-item-desc">
             <span style="color:var(--orange);">장대양봉</span> 몸통이 캔들의 70%↑, 압도적 매수세<br>
             <span style="color:var(--orange);">장악형</span> 전일 음봉을 오늘 양봉이 완전히 감쌈<br>
+            <span style="opacity:0.6;font-size:10px;">⚠️ MA60 상승 추세 유효 시에만 점수 반영 (하락장 반등봉 차단)</span><br>
             <span style="opacity:0.6;font-size:10px;">눌림목 + 거래량급증과 함께 뜨면 최강 신호</span>
           </div>
         </div>
@@ -892,13 +894,13 @@
     'MA20아래': '현재가 < 20일 이동평균\n단기 하락 추세',
     'MA60위': '현재가 > 60일 이동평균\n중기 상승 추세 유지',
     '상승추세': 'close > MA20 > MA60 (정배열) + MA60 우상향 + 이격도 ≤ 120%\n중·단기 추세 모두 정배열 + 과열 구간 아님',
-    '거래량급증': '20일 평균 1.5배 이상 + 양봉 or 소폭 하락(-1% 이내)\n최근 5일 최고 거래량의 80% 이상\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
-    '눌림목': 'MA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)\n+ 당일 양봉 or 소폭 하락(-1% 이내)',
+    '거래량급증': '20일 평균 1.5배 이상 + 양봉 or 소폭 하락(-1% 이내)\n최근 5일 최고 거래량 이상 (5일 신고 거래량)\n전일 대비 1.2배 이상 + 거래대금 50억 이상\n5중 검증 통과 시에만 인정',
+    '눌림목': 'MA60 상승 추세 유효 시에만 인정 (하락장 제외)\nMA20 기준 0~10% 위 + 3일 전보다 하락 + 하락폭 -10% 이내\n+ 최근 3일 거래량 < 20일 평균 (거래량 감소 = 진짜 눌림목)\n+ 당일 양봉 or 소폭 하락(-1% 이내, 시가 기준)',
     'RSI골든': 'RSI선이 Signal선(9일MA)을 상향 돌파\n모멘텀 전환 신호. RSI과매도와 함께 뜨면 강한 매수 신호',
-    'RSI골든지속': 'RSI 골든크로스 발생 후 1~2일 유지 중\n크로스 직후 모멘텀 지속 구간 → 추세 전환 초입\nRSI ≤ 60일 때만 점수 반영',
+    'RSI골든지속': 'RSI 골든크로스 발생 후 1~4일 유지 중\n크로스 직후 모멘텀 지속 구간 → 추세 전환 초입\nRSI ≤ 60일 때만 점수 반영',
     'RSI골든5%': 'RSI선이 Signal선보다 5% 이상 위\nRSI ≤ 60 구간에서만 점수/반짝이 반영\nRSI > 60 (과열)이면 참고용 태그만 표시 (+1 미반영)',
-    '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호',
-    '장대양봉': '몸통이 캔들 전체의 70% 이상\n강한 매수세가 하루 종일 지속된 신호',
+    '장악형': '전일 음봉을 오늘 양봉이 완전히 감쌈\n매수세가 매도세를 완전히 압도한 신호\n⚠️ MA60 상승 추세 유효 시에만 점수 반영 (하락장 반등봉 차단)',
+    '장대양봉': '몸통이 캔들 전체의 70% 이상\n강한 매수세가 하루 종일 지속된 신호\n⚠️ MA60 상승 추세 유효 시에만 점수 반영 (하락장 반등봉 차단)',
     'MA60이격': 'MA60 이격도 85~95% 구간\nMA60 우상향이지만 현재가가 아직 MA60 위로 충분히 올라오지 못한 상태\n눌림 구간으로 판정 → 점수 -1 패널티 적용',
     '코스피하락장': '코스피(^KS11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -2, 강력매수 등급 제한\nKOSPI 종목에만 적용',
     '코스닥하락장': '코스닥(^KQ11) MA60 하락 추세\n시장 전체 하락장으로 판정 → score -2, 강력매수 등급 제한\nKOSDAQ 종목에만 적용',
