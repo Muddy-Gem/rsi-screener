@@ -13,24 +13,10 @@ import concurrent.futures
 from datetime import datetime, timedelta
 import pytz
 
-try:
-    from pykrx import stock as pykrx_stock
-    PYKRX_AVAILABLE = True
-except ImportError:
-    PYKRX_AVAILABLE = False
-
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-# ── 전종목 수집 설정 ──────────────────────────────────────
-STOCK_CACHE_FILE   = 'stock_list_cache.json'   # 종목 목록 캐시 파일
-STOCK_CACHE_TTL_H  = 24                         # 캐시 유효 시간 (시간)
-TOP_N_STOCKS       = 600                        # 시가총액 상위 N개 제한 (None = 전종목)
-MIN_MARKET_CAP     = 300_000_000_000            # 최소 시가총액 3000억 (너무 작은 종목 제외)
-# ─────────────────────────────────────────────────────────
-
-# 폴백용 하드코딩 목록 (pykrx 실패 시 사용)
-FALLBACK_STOCKS = [
+STOCKS = [
     {'name':'삼성전자','code':'005930','market':'KOSPI'},
     {'name':'SK하이닉스','code':'000660','market':'KOSPI'},
     {'name':'LG에너지솔루션','code':'373220','market':'KOSPI'},
@@ -183,10 +169,6 @@ FALLBACK_STOCKS = [
     {'name':'성우하이텍','code':'015750','market':'KOSDAQ'},
 ]
 
-# ── 종목 목록 캐시 (메모리) ──
-_stock_list_cache = {'stocks': None, 'updated_at': None}
-_stock_list_lock  = threading.Lock()
-
 CACHE_FILE = 'scan_cache.json'
 
 cache = {
@@ -218,141 +200,8 @@ def can_scan(ip):
     last_scan_by_ip[ip] = now
     return True
 
-def _load_stock_list_file_cache():
-    """디스크 캐시에서 종목 목록 로드 (서버 재시작 시 재수집 방지)"""
-    try:
-        if not os.path.exists(STOCK_CACHE_FILE):
-            return None
-        with open(STOCK_CACHE_FILE, 'r', encoding='utf-8') as f:
-            saved = json.load(f)
-        updated_at = datetime.fromisoformat(saved['updated_at'])
-        age_h = (datetime.now() - updated_at).total_seconds() / 3600
-        if age_h > STOCK_CACHE_TTL_H:
-            return None
-        stocks = saved['stocks']
-        print(f"[종목목록] 디스크 캐시 로드: {len(stocks)}개 (갱신: {saved['updated_at']})")
-        return stocks
-    except Exception as e:
-        print(f"[종목목록] 디스크 캐시 로드 실패: {e}")
-        return None
-
-def _save_stock_list_file_cache(stocks):
-    """종목 목록을 디스크에 저장"""
-    try:
-        payload = {'stocks': stocks, 'updated_at': datetime.now().isoformat()}
-        tmp_path = None
-        dir_name = os.path.dirname(os.path.abspath(STOCK_CACHE_FILE)) or '.'
-        with tempfile.NamedTemporaryFile('w', dir=dir_name, delete=False,
-                                         suffix='.tmp', encoding='utf-8') as tmp:
-            json.dump(payload, tmp, ensure_ascii=False)
-            tmp_path = tmp.name
-        os.replace(tmp_path, STOCK_CACHE_FILE)
-        print(f"[종목목록] 디스크 캐시 저장: {len(stocks)}개")
-    except Exception as e:
-        print(f"[종목목록] 디스크 캐시 저장 실패: {e}")
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
-
-def _fetch_stock_list_from_pykrx():
-    """pykrx로 코스피+코스닥 전종목 수집 (시가총액 필터 포함)"""
-    kst = pytz.timezone('Asia/Seoul')
-    now = datetime.now(kst)
-    # 주말이면 금요일, 평일이면 당일 (전일 기준이면 -1일)
-    weekday = now.weekday()
-    if weekday == 5:   offset = 1   # 토요일 → 금요일
-    elif weekday == 6: offset = 2   # 일요일 → 금요일
-    else:              offset = 1   # 평일 → 전일 (당일 확정 전)
-    target_date = (now - timedelta(days=offset)).strftime('%Y%m%d')
-
-    stocks = []
-    for market in ('KOSPI', 'KOSDAQ'):
-        try:
-            # 종목 코드 + 이름
-            tickers = pykrx_stock.get_market_ticker_list(date=target_date, market=market)
-            if not tickers:
-                print(f"[pykrx] {market} 종목 목록 비어있음")
-                continue
-
-            # 시가총액 조회 (필터링용)
-            try:
-                cap_df = pykrx_stock.get_market_cap_by_ticker(target_date, market=market)
-                cap_map = cap_df['시가총액'].to_dict() if '시가총액' in cap_df.columns else {}
-            except Exception:
-                cap_map = {}
-
-            for code in tickers:
-                name = pykrx_stock.get_market_ticker_name(code)
-                if not name:
-                    continue
-                cap = cap_map.get(code, 0)
-                # 최소 시가총액 필터
-                if cap and cap < MIN_MARKET_CAP:
-                    continue
-                stocks.append({
-                    'name':   name,
-                    'code':   code,
-                    'market': market,
-                    'cap':    int(cap) if cap else 0,
-                })
-            print(f"[pykrx] {market}: {len([s for s in stocks if s['market']==market])}개 수집")
-        except Exception as e:
-            print(f"[pykrx] {market} 수집 오류: {e}")
-
-    if not stocks:
-        return None
-
-    # 시가총액 내림차순 정렬 → 상위 N개 선택
-    stocks.sort(key=lambda x: x['cap'], reverse=True)
-    if TOP_N_STOCKS:
-        stocks = stocks[:TOP_N_STOCKS]
-
-    # cap 필드 제거 (스캔 로직에 불필요)
-    for s in stocks:
-        s.pop('cap', None)
-
-    print(f"[pykrx] 최종 {len(stocks)}개 종목 (TOP_N={TOP_N_STOCKS})")
-    return stocks
-
-def get_stocks() -> pd.DataFrame:
-    """전종목 목록 반환.
-
-    우선순위:
-      1. 메모리 캐시 (TTL 24h)
-      2. 디스크 캐시 (TTL 24h, 서버 재시작 시 복원)
-      3. pykrx 실시간 수집
-      4. 폴백: 하드코딩 FALLBACK_STOCKS
-
-    Returns:
-        DataFrame with columns: name, code, market
-    """
-    with _stock_list_lock:
-        # 1. 메모리 캐시
-        if _stock_list_cache['stocks'] is not None:
-            age_h = 0
-            if _stock_list_cache['updated_at']:
-                age_h = (datetime.now() - _stock_list_cache['updated_at']).total_seconds() / 3600
-            if age_h < STOCK_CACHE_TTL_H:
-                return pd.DataFrame(_stock_list_cache['stocks'])
-
-        # 2. 디스크 캐시
-        from_disk = _load_stock_list_file_cache()
-        if from_disk:
-            _stock_list_cache['stocks']     = from_disk
-            _stock_list_cache['updated_at'] = datetime.now()
-            return pd.DataFrame(from_disk)
-
-        # 3. pykrx 수집
-        if PYKRX_AVAILABLE:
-            stocks = _fetch_stock_list_from_pykrx()
-            if stocks:
-                _stock_list_cache['stocks']     = stocks
-                _stock_list_cache['updated_at'] = datetime.now()
-                _save_stock_list_file_cache(stocks)
-                return pd.DataFrame(stocks)
-
-        # 4. 폴백
-        print(f"[종목목록] pykrx 수집 실패 → 폴백 {len(FALLBACK_STOCKS)}개 사용")
-        return pd.DataFrame(FALLBACK_STOCKS)
+def get_stocks():
+    return pd.DataFrame(STOCKS)
 
 def check_market_trend(ticker_symbol):
     """지수 MA60 우상향 여부 확인 (t > t-5 > t-10)"""
@@ -377,7 +226,7 @@ def check_kospi_market():
 def check_kosdaq_market():
     return check_market_trend('^KQ11')
 
-def fetch_stock_data(code, market='KOSPI', period=14):
+def fetch_stock_data(code, market='KOSPI'):
     """종목 데이터 + RSI + 이동평균 + 볼린저밴드 + 52주 고저 계산
     [변경] 볼린저밴드 점수 제거 → 상승추세(+1점), 거래량증가(+1점), 눌림목(태그) 추가
     """
@@ -507,10 +356,13 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         open_price = float(hist['Open'].iloc[-1])
         is_bullish = price > open_price  # 양봉 여부
 
+        # [수정3] 거래량 급증: 양봉 필수 → "양봉 or 당일 -1% 이내" 로 완화
+        # 진짜 눌림목 반등은 음봉 마지막 날에 거래량이 터지는 경우도 많음
+        vol_bullish_ok = is_bullish or (change > -1.0)
         is_volume_surge = (
             vol_valid and
             vol_ratio >= 1.5 and                      # 1. 20일 평균 대비 1.5배 이상
-            is_bullish and                            # 2. 양봉 (가격 상승 동반)
+            vol_bullish_ok and                        # 2. 양봉 or 소폭 하락(-1% 이내)
             vol_current >= vol_5day_max * 0.8 and    # 3. 최근 5일 최고 거래량의 80% 이상
             vol_current > vol_prev * 1.2 and         # 4. 전일 대비 1.2배 이상
             is_liquid                                 # 5. 거래대금 50억 이상
@@ -523,12 +375,17 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         # 거래량 감소: 최근 3일 평균이 20일 평균보다 낮으면 진짜 눌림목
         vol_3day_avg = float(volume.iloc[-3:].mean()) if n >= 3 else vol_current
         vol_declining = vol_3day_avg < vol_ma20 if vol_ma20 > 0 else False
+        # [수정4] 양봉 필수 → "양봉 or 소폭 하락(-1% 이내)"으로 완화
+        # 3일 하락(price < price_3days_ago) + 당일 양봉은 논리 충돌처럼 보이지만
+        # "3일 전보다 낮은 구간에서 오늘 반등 시작(양봉)" = 정상 눌림목 패턴
+        # 소폭 음봉(-1% 이내)까지 허용해 조정 마지막 날 케이스 추가 포착
+        pullback_candle_ok = is_bullish or (change > -1.0)
         is_pullback = (
             (0 <= ma20_pct <= 10) and
             (price < price_3days_ago) and
-            (drop_pct >= -10) and      # 급락(-10% 초과)은 눌림목 아님
-            vol_declining and          # 거래량 감소 = 진짜 눌림목
-            is_bullish                 # 당일 양봉 = 조정 마무리 신호
+            (drop_pct >= -10) and          # 급락(-10% 초과)은 눌림목 아님
+            vol_declining and              # 거래량 감소 = 진짜 눌림목
+            pullback_candle_ok             # 당일 양봉 or 소폭 음봉
         )
 
         # ── 캔들패턴 ──
@@ -544,12 +401,6 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         lower_wick = min(op, cl) - lo
         upper_wick = hi - max(op, cl)
 
-        # 망치형: 아래꼬리 > 몸통 2배 + 위꼬리 < 몸통 0.5배 + 양봉
-        is_hammer = (
-            lower_wick >= body * 2 and
-            upper_wick <= body * 0.5 and
-            cl > op
-        )
         # 장대양봉: 몸통이 전체 캔들의 70% 이상
         is_marubozu = (
             cl > op and
@@ -563,23 +414,10 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             op < cl_prev            # 오늘 시가 < 전일 종가
         )
 
-        # 망치형 제거: 아래꼬리만 길면 조건 충족 → 노이즈 많음
         # 장악형 + 장대양봉만 유지 (명확한 매수세 확인 패턴)
         candle_pattern = None
         if is_engulfing:   candle_pattern = '장악형'
         elif is_marubozu:  candle_pattern = '장대양봉'
-
-        # ── 볼린저밴드 (20일, 2σ) ──
-        if n >= 20:
-            bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
-            bb_upper = round(float(bb.bollinger_hband().iloc[-1]), 0)
-            bb_lower = round(float(bb.bollinger_lband().iloc[-1]), 0)
-            bb_mid   = round(float(bb.bollinger_mavg().iloc[-1]), 0)
-            bb_pct   = round(float(bb.bollinger_pband().iloc[-1]) * 100, 1)
-        else:
-            bb_upper = bb_lower = bb_mid = price
-            bb_pct = 50.0
-        near_bb_lower = bb_pct <= 20
 
         # ── 52주 고저 ──
         high_52 = round(float(close.tail(252).max()), 0)
@@ -587,22 +425,29 @@ def fetch_stock_data(code, market='KOSPI', period=14):
         pct_from_low  = round((price - low_52) / low_52 * 100, 1)
         pct_from_high = round((price - high_52) / high_52 * 100, 1)
 
-        # ── 종합 신호 점수 (0~6점) ──
+        # ── 종합 신호 점수 (0~7점) ──
         score = 0
-        if rsi_val <= 40 and rsi_ma60_valid and rsi_rising: score += 1
-        if rsi_val <= 30 and rsi_ma60_valid and rsi_rising: score += 1
+        # [수정1] RSI 점수: elif 구조로 중복 가산 제거 (RSI 29 → 2점, RSI 35 → 1점)
+        if rsi_val <= 30 and rsi_ma60_valid and rsi_rising:       score += 2
+        elif rsi_val <= 40 and rsi_ma60_valid and rsi_rising:     score += 1
         if is_uptrend: score += 1
         if is_volume_surge: score += 1
         # RSI골든지속 / RSI골든5% 중 하나만 점수 (중복 방지)
         if (rsi_golden_keep or rsi_golden_5) and rsi_val <= 60: score += 1
         if is_pullback: score += 1
         if candle_pattern: score += 1
-        if ma60_penalty: score = max(0, score - 1)  # MA60 이격 눌림 구간 패널티
+        if ma60_penalty: score = max(0, score - 1)   # MA60 이격 85~95% 구간 패널티 (-1)
+        # [수정5] MA60 이격도 85~90% 구간: 위 패널티에 추가로 -1 → 해당 구간 실질 -2
+        #         MA60 이격도 90~95% 구간: 위 패널티만 적용 → -1
+        if rsi_ma60_valid and ma60_ratio < 0.90:      score = max(0, score - 1)
 
-        if score >= 4 and rsi_val <= 60:              signal = '강력매수'
-        elif score >= 3 and rsi_val <= 60:            signal = '매수유망'
-        elif rsi_val <= 30 and rsi_ma60_valid:        signal = '강한매수'   # MA60 상승 중일 때만
-        elif rsi_val <= 40 and rsi_ma60_valid:        signal = '매수고려'   # MA60 상승 중일 때만
+        # [수정2] 강력매수 기준 5점으로 상향 (7개 조건 중 71% 충족 요구)
+        # 우선순위: 강력매수 > 매수유망 > 강한매수 > 매수고려 > 관망
+        # RSI≤30이어도 score≥4면 매수유망으로 표시 (점수 조건이 더 강한 신호)
+        if score >= 5 and rsi_val <= 60:              signal = '강력매수'
+        elif score >= 4 and rsi_val <= 60:            signal = '매수유망'
+        elif rsi_val <= 30 and rsi_ma60_valid:        signal = '강한매수'   # score 미달 + 극과매도
+        elif rsi_val <= 40 and rsi_ma60_valid:        signal = '매수고려'   # score 미달 + 과매도
         else:                                         signal = '관망'
 
         result = {
@@ -620,8 +465,6 @@ def fetch_stock_data(code, market='KOSPI', period=14):
             'is_liquid': is_liquid,
             'is_pullback': is_pullback, 'ma20_pct': ma20_pct,
             'candle_pattern': candle_pattern,
-            'bb_upper': bb_upper, 'bb_lower': bb_lower, 'bb_mid': bb_mid, 'bb_pct': bb_pct,
-            'near_bb_lower': near_bb_lower,
             'high_52': high_52, 'low_52': low_52,
             'pct_from_low': pct_from_low, 'pct_from_high': pct_from_high,
             'score': score, 'signal': signal, 'market_penalty': False,
@@ -705,13 +548,13 @@ def run_scan(stocks_df, requester_ip):
                 market = r.get('market', 'KOSPI')
                 market_up = kospi_up if market == 'KOSPI' else kosdaq_up
                 if not market_up:
-                    res['score'] = max(0, res['score'] - 1)  # 점수 -1
-                    res['market_penalty'] = True              # 종목 태그용 플래그
+                    res['score'] = max(0, res['score'] - 2)  # [수정6] 하락장 패널티 -2
+                    res['market_penalty'] = True
                     # 패널티 후 점수 기반 신호 재판정
                     s = res['score']
                     rsi = res['rsi']
-                    if s >= 4 and rsi <= 60:             res['signal'] = '강력매수'
-                    elif s >= 3 and rsi <= 60:           res['signal'] = '매수유망'
+                    if s >= 5 and rsi <= 60:             res['signal'] = '강력매수'
+                    elif s >= 4 and rsi <= 60:           res['signal'] = '매수유망'
                     elif rsi <= 30 and res['rsi_ma60_valid']: res['signal'] = '강한매수'
                     elif rsi <= 40 and res['rsi_ma60_valid']: res['signal'] = '매수고려'
                     else:                                res['signal'] = '관망'
@@ -786,9 +629,6 @@ def get_status():
         'is_stale': is_stale,
         'kospi_market_up': cache['kospi_market_up'],
         'kosdaq_market_up': cache['kosdaq_market_up'],
-        'stock_list_count': len(_stock_list_cache['stocks']) if _stock_list_cache['stocks'] else len(FALLBACK_STOCKS),
-        'stock_list_updated': _stock_list_cache['updated_at'].strftime('%Y-%m-%d %H:%M:%S') if _stock_list_cache['updated_at'] else None,
-        'pykrx_available': PYKRX_AVAILABLE,
     })
 
 # ── 즐겨찾기 (프론트 localStorage 사용 — 서버 API 미사용) ──
@@ -814,41 +654,23 @@ def get_results():
 def quick_scan():
     ip = request.remote_addr
     if not can_scan(ip):
-        remaining = SCAN_COOLDOWN - (datetime.now(pytz.timezone('Asia/Seoul')) - last_scan_by_ip.get(ip, datetime.min.replace(tzinfo=pytz.timezone('Asia/Seoul'))))
+        kst = pytz.timezone('Asia/Seoul')
+        _fallback = datetime.min.replace(tzinfo=pytz.utc).astimezone(kst)
+        remaining = SCAN_COOLDOWN - (datetime.now(kst) - last_scan_by_ip.get(ip, _fallback))
         mins = int(remaining.total_seconds() / 60) + 1
         return jsonify({'message': f'너무 자주 스캔하고 있습니다. {mins}분 후 다시 시도하세요.', 'status': 'cooldown'})
     if not scan_lock.acquire(blocking=False):
         return jsonify({'message': '다른 사용자가 스캔 중입니다. 잠시 후 결과가 표시됩니다.', 'status': 'scanning', 'total': cache['total'], 'progress': cache['progress']})
-    t = threading.Thread(target=run_scan, args=(get_stocks(), ip))
+    stocks_df = get_stocks()
+    t = threading.Thread(target=run_scan, args=(stocks_df, ip))
     t.daemon = True
     t.start()
-    stocks_df = get_stocks()
     return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(stocks_df)})
 
 @app.route('/api/scan', methods=['GET','POST'])
 def full_scan():
     """quick_scan과 동일 — 하위 호환성 유지용"""
     return quick_scan()
-
-@app.route('/api/refresh-stock-list', methods=['POST'])
-def refresh_stock_list():
-    """종목 목록 캐시 강제 갱신 (pykrx 재수집)"""
-    with _stock_list_lock:
-        _stock_list_cache['stocks']     = None
-        _stock_list_cache['updated_at'] = None
-    # 디스크 캐시도 삭제
-    try:
-        if os.path.exists(STOCK_CACHE_FILE):
-            os.remove(STOCK_CACHE_FILE)
-    except Exception:
-        pass
-    # 재수집
-    df = get_stocks()
-    return jsonify({
-        'message': f'종목 목록 갱신 완료: {len(df)}개',
-        'count': len(df),
-        'pykrx_available': PYKRX_AVAILABLE,
-    })
 
 if __name__ == '__main__':
     load_cache()
