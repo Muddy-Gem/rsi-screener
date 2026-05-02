@@ -190,6 +190,10 @@ def can_scan(ip):
         return True
     kst = pytz.timezone('Asia/Seoul')
     now = datetime.now(kst)
+    # 1시간 이상 된 항목 정리 (메모리 누수 방지)
+    expired = [k for k, v in last_scan_by_ip.items() if now - v > timedelta(hours=1)]
+    for k in expired:
+        del last_scan_by_ip[k]
     last = last_scan_by_ip.get(ip)
     if last and now - last < SCAN_COOLDOWN:
         return False
@@ -212,7 +216,8 @@ def check_market_trend(ticker_symbol):
         ma60_5d   = float(ma60.iloc[-6])
         ma60_10d  = float(ma60.iloc[-11])
         return (ma60_now > ma60_5d) and (ma60_5d > ma60_10d)
-    except:
+    except Exception as e:
+        print(f"시장 추세 체크 오류 ({ticker_symbol}): {e}")
         return True  # 오류 시 중립(True)으로 처리
 
 def check_kospi_market():
@@ -551,9 +556,14 @@ def run_scan(stocks_df, requester_ip):
                 if not market_up:
                     res['score'] = max(0, res['score'] - 1)  # 점수 -1
                     res['market_penalty'] = True              # 종목 태그용 플래그
-                    # 강력매수 → 매수유망으로 등급 제한
-                    if res['signal'] == '강력매수':
-                        res['signal'] = '매수유망'
+                    # 패널티 후 점수 기반 신호 재판정
+                    s = res['score']
+                    rsi = res['rsi']
+                    if s >= 4 and rsi <= 60:             res['signal'] = '강력매수'
+                    elif s >= 3 and rsi <= 60:           res['signal'] = '매수유망'
+                    elif rsi <= 30 and res['rsi_ma60_valid']: res['signal'] = '강한매수'
+                    elif rsi <= 40 and res['rsi_ma60_valid']: res['signal'] = '매수고려'
+                    else:                                res['signal'] = '관망'
                 else:
                     res['market_penalty'] = False
             return res
@@ -627,22 +637,17 @@ def get_status():
         'kosdaq_market_up': cache['kosdaq_market_up'],
     })
 
-# ── 즐겨찾기 (서버 메모리 저장, 재시작 시 초기화) ──
+# ── 즐겨찾기 (프론트 localStorage 사용 — 서버 API 미사용) ──
+# 하위 호환성을 위해 엔드포인트는 유지하되 빈 응답 반환
 favorites = set()
 
 @app.route('/api/favorites', methods=['GET'])
 def get_favorites():
-    return jsonify({'favorites': list(favorites)})
+    return jsonify({'favorites': []})
 
-@app.route('/api/favorites/<code>', methods=['POST'])
-def add_favorite(code):
-    favorites.add(code)
-    return jsonify({'favorites': list(favorites)})
-
-@app.route('/api/favorites/<code>', methods=['DELETE'])
-def remove_favorite(code):
-    favorites.discard(code)
-    return jsonify({'favorites': list(favorites)})
+@app.route('/api/favorites/<code>', methods=['POST', 'DELETE'])
+def update_favorite(code):
+    return jsonify({'favorites': []})
 
 @app.route('/api/results')
 def get_results():
@@ -667,17 +672,8 @@ def quick_scan():
 
 @app.route('/api/scan', methods=['GET','POST'])
 def full_scan():
-    ip = request.remote_addr
-    if not can_scan(ip):
-        remaining = SCAN_COOLDOWN - (datetime.now(pytz.timezone('Asia/Seoul')) - last_scan_by_ip.get(ip, datetime.min.replace(tzinfo=pytz.timezone('Asia/Seoul'))))
-        mins = int(remaining.total_seconds() / 60) + 1
-        return jsonify({'message': f'너무 자주 스캔하고 있습니다. {mins}분 후 다시 시도하세요.', 'status': 'cooldown'})
-    if not scan_lock.acquire(blocking=False):
-        return jsonify({'message': '다른 사용자가 스캔 중입니다.', 'status': 'scanning', 'total': cache['total'], 'progress': cache['progress']})
-    t = threading.Thread(target=run_scan, args=(get_stocks(), ip))
-    t.daemon = True
-    t.start()
-    return jsonify({'message': '스캔 시작됨', 'status': 'scanning', 'total': len(STOCKS)})
+    """quick_scan과 동일 — 하위 호환성 유지용"""
+    return quick_scan()
 
 if __name__ == '__main__':
     load_cache()
