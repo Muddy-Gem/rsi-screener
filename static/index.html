@@ -767,10 +767,7 @@
           renderResults(data.timestamp);
           setScanUI(false);
           document.getElementById('stale-banner').style.display = 'none';
-          // 코스피 배너 업데이트
-          const st2 = await fetch('/api/status');
-          const s2 = await st2.json();
-          updateMarketBanners(s2);
+          updateMarketBanners(s); // 이미 가져온 status 객체 재사용
         } else if (s.status==='error'){
           clearInterval(scanInterval); scanInterval=null;
           setScanUI(false);
@@ -821,7 +818,7 @@
     let list = allData.filter(s => {
       if (!(mkt==='ALL'||s.market===mkt)) return false;
       if (!(s.name.toLowerCase().includes(q)||s.code.includes(q))) return false;
-      if (currentView==='all') return true;
+      if (currentView==='all') return s.rsi <= thr;
       if (currentView==='promising') return ['매수유망','강력매수','강한매수'].includes(s.signal);
       if (currentView==='favorites') return favorites.has(s.code);
       return s.rsi <= 40; // rsi40 탭은 항상 40 고정
@@ -896,7 +893,7 @@
   function pip(){ return `<span class="score-pip score-pip-plus">+1</span>`; }
   function pipMinus(){ return `<span class="score-pip score-pip-minus">-1</span>`; }
 
-  function indTags(s){
+  function buildIndTags(s, isDesktop){
     const tags = [];
     const rsiValid = s.rsi_ma60_valid;
     if (s.rsi<=30) tags.push([rsiValid?'ind-red ind-scored':'ind-dim', 'RSI극과매도', rsiValid]);
@@ -904,14 +901,13 @@
     if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세', true]);
     else if (s.above_ma20) tags.push(['ind-blue','MA20위', false]);
     else if (s.near_ma20) tags.push(['ind-blue','MA20근접', false]);
-    else tags.push(['ind-dim','MA20아래', false]);
-    if (s.above_ma60) tags.push(['ind-green','MA60위', false]);
+    else if (!isDesktop) tags.push(['ind-dim','MA20아래', false]);
+    if (!isDesktop && s.above_ma60) tags.push(['ind-green','MA60위', false]);
     if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
     if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
     if (s.rsi_golden_5) tags.push([s.rsi<=60?'ind-rainbow ind-scored':'ind-blue','RSI골든5%', s.rsi<=60]);
     else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
     if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
-    // MA60 패널티
     if (s.ma60_penalty) tags.push(['ind-penalty','MA60이격', 'penalty']);
     return tags.map(([cls,txt,scored])=>`
       <span class="tooltip-wrap">
@@ -920,26 +916,8 @@
       </span>`).join('');
   }
 
-  function indTagsDesktop(s){
-    const tags = [];
-    const rsiValid = s.rsi_ma60_valid;
-    if (s.rsi<=30) tags.push([rsiValid?'ind-red ind-scored':'ind-dim', 'RSI극과매도', rsiValid]);
-    else if (s.rsi<=40) tags.push([rsiValid?'ind-yellow ind-scored':'ind-dim', 'RSI과매도', rsiValid]);
-    if (s.is_uptrend) tags.push(['ind-green ind-scored','상승추세', true]);
-    else if (s.above_ma20) tags.push(['ind-blue','MA20위', false]);
-    else if (s.near_ma20) tags.push(['ind-blue','MA20근접', false]);
-    if (s.is_volume_surge) tags.push(['ind-yellow ind-scored','거래량급증', true]);
-    if (s.is_pullback) tags.push(['ind-dim ind-scored','눌림목', true]);
-    if (s.rsi_golden_5) tags.push([s.rsi<=60?'ind-rainbow ind-scored':'ind-blue','RSI골든5%', s.rsi<=60]);
-    else if (s.rsi_golden) tags.push(['ind-blue','RSI골든', false]);
-    if (s.candle_pattern) tags.push(['ind-orange ind-scored', s.candle_pattern, true]);
-    if (s.ma60_penalty) tags.push(['ind-penalty','MA60이격', 'penalty']);
-    return tags.map(([cls,txt,scored])=>`
-      <span class="tooltip-wrap">
-        <span class="ind-tag ${cls}">${txt}${scored===true?pip():scored==='penalty'?pipMinus():''}</span>
-        <span class="tooltip-box">${(IND_TIPS[txt]||txt).replace(/\n/g,'<br>')}</span>
-      </span>`).join('');
-  }
+  function indTags(s)        { return buildIndTags(s, false); }
+  function indTagsDesktop(s) { return buildIndTags(s, true);  }
 
   function toggleGuide(){
     const body = document.getElementById('guide-body');
